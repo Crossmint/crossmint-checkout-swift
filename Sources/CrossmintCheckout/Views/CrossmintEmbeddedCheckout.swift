@@ -13,7 +13,6 @@ public struct CrossmintEmbeddedCheckout: View {
     private let lineItems: CheckoutLineItems?
     private let payment: CheckoutPayment?
     private let recipient: CheckoutRecipient?
-    private let apiKey: String?
     private let appearance: CheckoutAppearance?
     private let environment: CheckoutEnvironment
 
@@ -23,7 +22,6 @@ public struct CrossmintEmbeddedCheckout: View {
         lineItems: CheckoutLineItems? = nil,
         payment: CheckoutPayment? = nil,
         recipient: CheckoutRecipient? = nil,
-        apiKey: String? = nil,
         appearance: CheckoutAppearance? = nil,
         environment: CheckoutEnvironment = .staging
     ) {
@@ -32,7 +30,6 @@ public struct CrossmintEmbeddedCheckout: View {
         self.lineItems = lineItems
         self.payment = payment
         self.recipient = recipient
-        self.apiKey = apiKey
         self.appearance = appearance
         self.environment = environment
     }
