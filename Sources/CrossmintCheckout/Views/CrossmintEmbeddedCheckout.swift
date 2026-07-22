@@ -8,6 +8,7 @@
 import SwiftUI
 
 public struct CrossmintEmbeddedCheckout: View {
+    private let apiKey: String
     private let orderId: String?
     private let clientSecret: String?
     private let lineItems: CheckoutLineItems?
@@ -17,6 +18,7 @@ public struct CrossmintEmbeddedCheckout: View {
     private let environment: CheckoutEnvironment
 
     public init(
+        apiKey: String,
         orderId: String? = nil,
         clientSecret: String? = nil,
         lineItems: CheckoutLineItems? = nil,
@@ -25,6 +27,7 @@ public struct CrossmintEmbeddedCheckout: View {
         appearance: CheckoutAppearance? = nil,
         environment: CheckoutEnvironment = .staging
     ) {
+        self.apiKey = apiKey
         self.orderId = orderId
         self.clientSecret = clientSecret
         self.lineItems = lineItems
@@ -55,6 +58,10 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     func generateCheckoutUrl() throws -> String {
+        guard !apiKey.isEmpty else {
+            throw CheckoutError.invalidConfiguration("apiKey is required")
+        }
+
         if lineItems != nil {
             throw CheckoutError.notImplemented(
                 "Crossmint Checkout SDK: passing lineItems is not yet implemented"
@@ -80,6 +87,8 @@ public struct CrossmintEmbeddedCheckout: View {
             "version": SDKVersion.version
         ]
         queryItems.append(URLQueryItem(name: "sdkMetadata", value: try sdkMetadata.toJSON()))
+
+        queryItems.append(URLQueryItem(name: "apiKey", value: apiKey))
 
         if let orderId {
             queryItems.append(URLQueryItem(name: "orderId", value: orderId))

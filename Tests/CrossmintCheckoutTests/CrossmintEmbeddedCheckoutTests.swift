@@ -11,6 +11,7 @@ import Testing
 @MainActor
 @Test func urlContainsStagingDomain() throws {
     let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
         orderId: "test-order-id",
         clientSecret: "test-secret",
         environment: .staging
@@ -23,6 +24,7 @@ import Testing
 @MainActor
 @Test func urlContainsProductionDomain() throws {
     let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
         orderId: "test-order-id",
         clientSecret: "test-secret",
         environment: .production
@@ -35,6 +37,7 @@ import Testing
 @MainActor
 @Test func urlContainsOrderIdAndClientSecret() throws {
     let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
         orderId: "abc-123",
         clientSecret: "secret-456",
         environment: .staging
@@ -46,8 +49,35 @@ import Testing
 }
 
 @MainActor
+@Test func urlContainsApiKey() throws {
+    let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_production_abc123",
+        orderId: "abc-123",
+        clientSecret: "secret-456",
+        environment: .production
+    )
+
+    let url = try checkout.generateCheckoutUrl()
+    #expect(url.contains("apiKey=ck_production_abc123"))
+}
+
+@MainActor
+@Test func emptyApiKeyThrows() throws {
+    let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "",
+        orderId: "abc-123",
+        clientSecret: "secret-456",
+        environment: .staging
+    )
+
+    #expect(throws: CheckoutError.self) {
+        try checkout.generateCheckoutUrl()
+    }
+}
+
+@MainActor
 @Test func urlContainsSdkMetadata() throws {
-    let checkout = CrossmintEmbeddedCheckout(environment: .staging)
+    let checkout = CrossmintEmbeddedCheckout(apiKey: "ck_test", environment: .staging)
 
     let url = try checkout.generateCheckoutUrl()
     #expect(url.contains("sdkMetadata"))
@@ -57,6 +87,7 @@ import Testing
 @MainActor
 @Test func urlContainsPaymentConfig() throws {
     let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
         payment: CheckoutPayment(
             crypto: CheckoutCryptoPayment(enabled: false),
             fiat: CheckoutFiatPayment(enabled: true)
@@ -71,6 +102,7 @@ import Testing
 @MainActor
 @Test func lineItemsThrowsNotImplemented() throws {
     let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
         lineItems: CheckoutLineItems(tokenLocator: "test"),
         environment: .staging
     )
@@ -83,6 +115,7 @@ import Testing
 @MainActor
 @Test func recipientThrowsNotImplemented() throws {
     let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
         recipient: CheckoutRecipient(email: "test@test.com"),
         environment: .staging
     )

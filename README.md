@@ -34,6 +34,8 @@ POST https://www.crossmint.com/api/2022-06-09/orders
 
 ### 2. Render the checkout client-side
 
+Pass your **client-side API key** (`ck_...`) — the same key used by the Orders API's client-side counterpart. It is required; without it the hosted checkout renders an "Invalid input" configuration error.
+
 ```swift
 import SwiftUI
 import CrossmintCheckout
@@ -44,6 +46,7 @@ struct CheckoutView: View {
 
     var body: some View {
         CrossmintEmbeddedCheckout(
+            apiKey: "ck_production_...",
             orderId: orderId,
             clientSecret: clientSecret,
             environment: .production
@@ -56,6 +59,7 @@ struct CheckoutView: View {
 
 | Property | Type | Required | Description |
 |---|---|---|---|
+| `apiKey` | `String` | Yes | Your client-side API key (`ck_...`) |
 | `orderId` | `String?` | Yes* | The order ID returned by the Orders API |
 | `clientSecret` | `String?` | Yes* | The client secret returned by the Orders API |
 | `payment` | `CheckoutPayment?` | No | Payment configuration (fiat/crypto, allowed methods) |
@@ -68,6 +72,7 @@ struct CheckoutView: View {
 
 ```swift
 CrossmintEmbeddedCheckout(
+    apiKey: "ck_production_...",
     orderId: orderId,
     clientSecret: clientSecret,
     payment: CheckoutPayment(
@@ -87,6 +92,7 @@ CrossmintEmbeddedCheckout(
 
 ```swift
 CrossmintEmbeddedCheckout(
+    apiKey: "ck_production_...",
     orderId: orderId,
     clientSecret: clientSecret,
     appearance: CheckoutAppearance(
