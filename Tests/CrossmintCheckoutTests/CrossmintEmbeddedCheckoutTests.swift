@@ -124,3 +124,20 @@ import Testing
         try checkout.generateCheckoutUrl()
     }
 }
+
+@MainActor
+@Test func urlContainsAppearanceGlobalMessageRule() throws {
+    let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
+        appearance: CheckoutAppearance(
+            rules: CheckoutAppearanceRules(
+                globalMessage: CheckoutGlobalMessageRule(display: "visible")
+            )
+        ),
+        environment: .staging
+    )
+
+    let url = try checkout.generateCheckoutUrl()
+    #expect(url.contains("GlobalMessage"))
+    #expect(url.contains("visible"))
+}
