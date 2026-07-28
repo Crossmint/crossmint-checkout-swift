@@ -72,6 +72,14 @@ public struct CheckoutReceiptEmailInputRule: Codable, Sendable {
     }
 }
 
+public struct CheckoutGlobalMessageRule: Codable, Sendable {
+    public let display: String?
+
+    public init(display: String? = nil) {
+        self.display = display
+    }
+}
+
 public struct CheckoutLabelRule: Codable, Sendable {
     public let font: CheckoutFontStyle?
     public let colors: CheckoutColorStyle?
@@ -153,6 +161,7 @@ public struct CheckoutPrimaryButtonRule: Codable, Sendable {
 public struct CheckoutAppearanceRules: Codable, Sendable {
     public let destinationInput: CheckoutDestinationInputRule?
     public let receiptEmailInput: CheckoutReceiptEmailInputRule?
+    public let globalMessage: CheckoutGlobalMessageRule?
     public let label: CheckoutLabelRule?
     public let input: CheckoutInputRule?
     public let tab: CheckoutTabRule?
@@ -161,6 +170,7 @@ public struct CheckoutAppearanceRules: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case destinationInput = "DestinationInput"
         case receiptEmailInput = "ReceiptEmailInput"
+        case globalMessage = "GlobalMessage"
         case label = "Label"
         case input = "Input"
         case tab = "Tab"
@@ -170,6 +180,7 @@ public struct CheckoutAppearanceRules: Codable, Sendable {
     public init(
         destinationInput: CheckoutDestinationInputRule? = nil,
         receiptEmailInput: CheckoutReceiptEmailInputRule? = nil,
+        globalMessage: CheckoutGlobalMessageRule? = nil,
         label: CheckoutLabelRule? = nil,
         input: CheckoutInputRule? = nil,
         tab: CheckoutTabRule? = nil,
@@ -177,6 +188,7 @@ public struct CheckoutAppearanceRules: Codable, Sendable {
     ) {
         self.destinationInput = destinationInput
         self.receiptEmailInput = receiptEmailInput
+        self.globalMessage = globalMessage
         self.label = label
         self.input = input
         self.tab = tab
