@@ -11,6 +11,7 @@ import CrossmintCheckout
 struct ContentView: View {
     var body: some View {
         CrossmintEmbeddedCheckout(
+            apiKey: "ck_production_...",
             orderId: "your-order-id",
             clientSecret: "your-client-secret",
             payment: CheckoutPayment(
