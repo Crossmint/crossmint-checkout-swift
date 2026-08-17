@@ -15,6 +15,10 @@ public struct CrossmintEmbeddedCheckout: View {
     private let payment: CheckoutPayment?
     private let recipient: CheckoutRecipient?
     private let appearance: CheckoutAppearance?
+    private let identityVerificationHandling: IdentityVerificationHandling?
+    private let controller: CrossmintCheckoutController?
+    private let onOrderUpdated: ((CheckoutOrderUpdate) -> Void)?
+    private let onOrderCreationFailed: ((String) -> Void)?
     private let environment: CheckoutEnvironment
 
     public init(
@@ -25,6 +29,10 @@ public struct CrossmintEmbeddedCheckout: View {
         payment: CheckoutPayment? = nil,
         recipient: CheckoutRecipient? = nil,
         appearance: CheckoutAppearance? = nil,
+        identityVerificationHandling: IdentityVerificationHandling? = nil,
+        controller: CrossmintCheckoutController? = nil,
+        onOrderUpdated: ((CheckoutOrderUpdate) -> Void)? = nil,
+        onOrderCreationFailed: ((String) -> Void)? = nil,
         environment: CheckoutEnvironment = .staging
     ) {
         self.apiKey = apiKey
@@ -34,13 +42,21 @@ public struct CrossmintEmbeddedCheckout: View {
         self.payment = payment
         self.recipient = recipient
         self.appearance = appearance
+        self.identityVerificationHandling = identityVerificationHandling
+        self.controller = controller
+        self.onOrderUpdated = onOrderUpdated
+        self.onOrderCreationFailed = onOrderCreationFailed
         self.environment = environment
     }
 
     public var body: some View {
         switch checkoutUrlResult {
         case .success(let url):
-            CheckoutWebView(url: url)
+            HostedWebView(
+                url: url,
+                navigationPolicy: .permissive,
+                onEnvelope: handle
+            )
         case .failure(let error):
             VStack(spacing: 20) {
                 Text("Error")
@@ -50,6 +66,38 @@ public struct CrossmintEmbeddedCheckout: View {
                     .multilineTextAlignment(.center)
                     .padding()
             }
+        }
+    }
+
+    @MainActor
+    private func handle(_ envelope: BridgeEnvelope, _ responder: BridgeResponder) {
+        guard let event = CheckoutEvent(envelope: envelope) else { return }
+        switch event {
+        case .orderUpdated(let update):
+            controller?.handle(update)
+            onOrderUpdated?(update)
+        case .orderCreationFailed(let message):
+            onOrderCreationFailed?(message)
+        case .cryptoRequest(let request):
+            reply(to: request, via: responder)
+        }
+    }
+
+    // This SDK has no crypto payer. The page only asks when crypto payment is enabled, and going
+    // silent would leave it waiting — these are the no-payer replies the other mobile SDKs send.
+    // The separator inconsistency (".failed" vs ":failed") matches the page's event map exactly.
+    @MainActor
+    private func reply(to request: CryptoRequest, via responder: BridgeResponder) {
+        switch request {
+        case .load:
+            responder.send(event: "crypto:load.success", data: [:])
+        case .connectWalletShow(let show):
+            guard show else { return }
+            responder.send(event: "crypto:connect-wallet.failed", data: ["error": "No payer configured"])
+        case .sendTransaction:
+            responder.send(event: "crypto:send-transaction:failed", data: ["error": "No payer configured"])
+        case .signMessage:
+            responder.send(event: "crypto:sign-message:failed", data: ["error": "No payer configured"])
         }
     }
 
@@ -101,6 +149,12 @@ public struct CrossmintEmbeddedCheckout: View {
         }
         if let appearance {
             queryItems.append(URLQueryItem(name: "appearance", value: try appearance.toJSON()))
+        }
+        if let identityVerificationHandling {
+            queryItems.append(URLQueryItem(
+                name: "identityVerificationHandling",
+                value: identityVerificationHandling.rawValue
+            ))
         }
 
         components.queryItems = queryItems
