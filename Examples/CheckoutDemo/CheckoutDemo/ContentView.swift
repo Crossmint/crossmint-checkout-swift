@@ -47,7 +47,7 @@ struct ContentView: View {
                     apiKey: "ck_production_...",
                     credentials: credentials,
                     environment: .staging,
-                    onCompleted: { status in print("Identity verification finished: \(status)") },
+                    onComplete: { status in print("Identity verification finished: \(status)") },
                     onError: { error in print("Identity verification error: \(error.message)") }
                 )
             }

@@ -20,8 +20,8 @@ public struct CrossmintIdentityVerification: View {
     private let locale: CheckoutLocale?
     private let environment: CheckoutEnvironment
     private let onReady: (() -> Void)?
-    private let onCompleted: ((IdentityVerificationStatus) -> Void)?
-    private let onCancelled: (() -> Void)?
+    private let onComplete: ((IdentityVerificationStatus) -> Void)?
+    private let onCancel: (() -> Void)?
     private let onError: ((IdentityVerificationError) -> Void)?
 
     @State private var height: CGFloat = 0
@@ -32,8 +32,8 @@ public struct CrossmintIdentityVerification: View {
         locale: CheckoutLocale? = nil,
         environment: CheckoutEnvironment = .staging,
         onReady: (() -> Void)? = nil,
-        onCompleted: ((IdentityVerificationStatus) -> Void)? = nil,
-        onCancelled: (() -> Void)? = nil,
+        onComplete: ((IdentityVerificationStatus) -> Void)? = nil,
+        onCancel: (() -> Void)? = nil,
         onError: ((IdentityVerificationError) -> Void)? = nil
     ) {
         self.apiKey = apiKey
@@ -41,8 +41,8 @@ public struct CrossmintIdentityVerification: View {
         self.locale = locale
         self.environment = environment
         self.onReady = onReady
-        self.onCompleted = onCompleted
-        self.onCancelled = onCancelled
+        self.onComplete = onComplete
+        self.onCancel = onCancel
         self.onError = onError
     }
 
@@ -90,9 +90,9 @@ public struct CrossmintIdentityVerification: View {
         case .ready:
             onReady?()
         case .completed(let status):
-            onCompleted?(status)
+            onComplete?(status)
         case .cancelled:
-            onCancelled?()
+            onCancel?()
         case .failed(let error):
             onError?(error)
         }

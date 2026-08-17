@@ -170,7 +170,7 @@ struct CheckoutView: View {
                     apiKey: "ck_production_...",
                     credentials: credentials,
                     environment: .production,
-                    onCompleted: { status in print("KYC finished: \(status)") },
+                    onComplete: { status in print("KYC finished: \(status)") },
                     onError: { error in print("KYC error: \(error.message)") }
                 )
             }
@@ -192,8 +192,8 @@ Checkout does not depend on a completion signal from your component. It polls th
 | `locale` | `CheckoutLocale?` | No | UI language of the verification flow |
 | `environment` | `CheckoutEnvironment` | No | `.staging` (default) or `.production` |
 | `onReady` | `(() -> Void)?` | No | The verification UI finished loading |
-| `onCompleted` | `((IdentityVerificationStatus) -> Void)?` | No | The buyer finished; carries the outcome |
-| `onCancelled` | `(() -> Void)?` | No | The buyer dismissed the flow |
+| `onComplete` | `((IdentityVerificationStatus) -> Void)?` | No | The buyer finished; carries the outcome |
+| `onCancel` | `(() -> Void)?` | No | The buyer dismissed the flow |
 | `onError` | `((IdentityVerificationError) -> Void)?` | No | Something failed; `retriable` says whether presenting again can work |
 
 The view renders at zero height until the hosted page reports its size, then tracks it. Use `onReady` to drive your own loading indicator.
