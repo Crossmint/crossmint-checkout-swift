@@ -62,7 +62,7 @@ public struct CrossmintEmbeddedCheckout: View {
                 Text("Error")
                     .font(.headline)
                 Text(error.localizedDescription)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .padding()
             }

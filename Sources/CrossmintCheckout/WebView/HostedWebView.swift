@@ -108,6 +108,7 @@ struct HostedWebView: UIViewRepresentable {
 
         func load(_ url: String, in webView: WKWebView) {
             loadedURL = url
+            loadFailureGate = LoadFailureGate()
             guard let url = URL(string: url) else { return }
             webView.load(URLRequest(url: url))
         }

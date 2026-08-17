@@ -66,12 +66,15 @@ public struct CrossmintIdentityVerification: View {
             )
             .frame(maxWidth: .infinity)
             .frame(height: height)
+            .onChange(of: url) { _ in
+                height = 0
+            }
         case .failure(let error):
             VStack(spacing: 20) {
                 Text("Error")
                     .font(.headline)
                 Text(error.localizedDescription)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .padding()
             }
