@@ -5,6 +5,7 @@
 //  Created by Tomás Martins on 8/17/26.
 //
 
+import Foundation
 import Testing
 @testable import CrossmintCheckout
 
@@ -125,4 +126,15 @@ private let REQUIRES_KYC_EVENT = #"""
         return
     }
     #expect(message == "nope")
+}
+
+@MainActor
+@Test func decodesOrderJsonDirectly() throws {
+    let json = Data(#"""
+    {"orderId":"order-9","phase":"payment","payment":{"status":"requires-kyc","preparation":{"kyc":{"provider":"persona","inquiryId":"inq-9"}}}}
+    """#.utf8)
+    let order = try JSONDecoder().decode(CheckoutOrder.self, from: json)
+    #expect(order.orderId == "order-9")
+    #expect(order.paymentStatus == "requires-kyc")
+    #expect(order.identityVerificationCredentials?.inquiryId == "inq-9")
 }

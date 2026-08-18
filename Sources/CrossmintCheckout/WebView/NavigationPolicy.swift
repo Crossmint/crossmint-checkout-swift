@@ -43,18 +43,18 @@ enum NavigationPolicy {
 struct LoadFailureGate {
     private var hasFired = false
 
-    mutating func message(for error: Error) -> String? {
+    mutating func reportOnce(for error: Error) -> String? {
         let nsError = error as NSError
         guard nsError.code != NSURLErrorCancelled else { return nil }
-        return fireOnce(with: nsError.localizedDescription)
+        return reportOnce(message: nsError.localizedDescription)
     }
 
-    mutating func message(forHTTPStatus statusCode: Int) -> String? {
+    mutating func reportOnce(forHTTPStatus statusCode: Int) -> String? {
         guard statusCode >= 400 else { return nil }
-        return fireOnce(with: "HTTP \(statusCode)")
+        return reportOnce(message: "HTTP \(statusCode)")
     }
 
-    private mutating func fireOnce(with message: String) -> String? {
+    private mutating func reportOnce(message: String) -> String? {
         guard !hasFired else { return nil }
         hasFired = true
         return message

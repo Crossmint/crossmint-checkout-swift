@@ -51,7 +51,7 @@ public struct CrossmintIdentityVerification: View {
         case .success(let url):
             HostedWebView(
                 url: url,
-                navigationPolicy: .crossmintMainFrame(resolvedHost: resolvedHost),
+                navigationPolicy: .crossmintMainFrame(resolvedHost: environment.crossmintHost),
                 allowsMediaCapture: true,
                 isScrollEnabled: true,
                 injectsViewportScript: false,
@@ -98,10 +98,6 @@ public struct CrossmintIdentityVerification: View {
         }
     }
 
-    private var resolvedHost: String {
-        environment == .production ? "www.crossmint.com" : "staging.crossmint.com"
-    }
-
     private var verificationUrlResult: Result<String, Error> {
         Result { try generateVerificationUrl() }
     }
@@ -111,7 +107,7 @@ public struct CrossmintIdentityVerification: View {
             throw CheckoutError.invalidConfiguration("apiKey is required")
         }
 
-        let baseUrl = "https://\(resolvedHost)/sdk/unstable/identity-verification"
+        let baseUrl = "https://\(environment.crossmintHost)/sdk/unstable/identity-verification"
         guard var components = URLComponents(string: baseUrl) else {
             throw CheckoutError.invalidConfiguration("Invalid base URL")
         }

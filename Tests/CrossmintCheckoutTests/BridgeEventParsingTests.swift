@@ -195,3 +195,14 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
     #expect(script.contains(#"\'"#) || !script.contains("it's"))
     #expect(!script.contains("it's\nbroken"))
 }
+
+@MainActor
+@Test func noPayerRepliesMatchThePageEventMap() throws {
+    #expect(CryptoRequest.load.noPayerReply?.event == "crypto:load.success")
+    #expect(CryptoRequest.load.noPayerReply?.data == [:])
+    #expect(CryptoRequest.connectWalletShow(false).noPayerReply == nil)
+    #expect(CryptoRequest.connectWalletShow(true).noPayerReply?.event == "crypto:connect-wallet.failed")
+    #expect(CryptoRequest.sendTransaction.noPayerReply?.event == "crypto:send-transaction:failed")
+    #expect(CryptoRequest.signMessage.noPayerReply?.event == "crypto:sign-message:failed")
+    #expect(CryptoRequest.signMessage.noPayerReply?.data == ["error": "No payer configured"])
+}

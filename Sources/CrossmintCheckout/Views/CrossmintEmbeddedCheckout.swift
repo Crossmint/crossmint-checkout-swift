@@ -83,22 +83,10 @@ public struct CrossmintEmbeddedCheckout: View {
         }
     }
 
-    // This SDK has no crypto payer. The page only asks when crypto payment is enabled, and going
-    // silent would leave it waiting — these are the no-payer replies the other mobile SDKs send.
-    // The separator inconsistency (".failed" vs ":failed") matches the page's event map exactly.
     @MainActor
     private func reply(to request: CryptoRequest, via responder: BridgeResponder) {
-        switch request {
-        case .load:
-            responder.send(event: "crypto:load.success", data: [:])
-        case .connectWalletShow(let show):
-            guard show else { return }
-            responder.send(event: "crypto:connect-wallet.failed", data: ["error": "No payer configured"])
-        case .sendTransaction:
-            responder.send(event: "crypto:send-transaction:failed", data: ["error": "No payer configured"])
-        case .signMessage:
-            responder.send(event: "crypto:sign-message:failed", data: ["error": "No payer configured"])
-        }
+        guard let reply = request.noPayerReply else { return }
+        responder.send(event: reply.event, data: reply.data)
     }
 
     private var checkoutUrlResult: Result<String, Error> {
@@ -121,8 +109,7 @@ public struct CrossmintEmbeddedCheckout: View {
             )
         }
 
-        let domain = environment == .production ? "www" : "staging"
-        let baseUrl = "https://\(domain).crossmint.com/sdk/2024-03-05/embedded-checkout"
+        let baseUrl = "https://\(environment.crossmintHost)/sdk/2024-03-05/embedded-checkout"
 
         guard var components = URLComponents(string: baseUrl) else {
             throw CheckoutError.invalidConfiguration("Invalid base URL")
@@ -170,4 +157,8 @@ public struct CrossmintEmbeddedCheckout: View {
 public enum CheckoutEnvironment: Sendable {
     case staging
     case production
+
+    var crossmintHost: String {
+        self == .production ? "www.crossmint.com" : "staging.crossmint.com"
+    }
 }

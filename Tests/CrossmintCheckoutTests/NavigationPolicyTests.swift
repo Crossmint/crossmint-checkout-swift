@@ -56,23 +56,23 @@ private func url(_ string: String) throws -> URL {
 @Test func loadFailureGateFiresOnce() throws {
     var gate = LoadFailureGate()
     let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
-    #expect(gate.message(for: error) != nil)
-    #expect(gate.message(for: error) == nil)
-    #expect(gate.message(forHTTPStatus: 500) == nil)
+    #expect(gate.reportOnce(for: error) != nil)
+    #expect(gate.reportOnce(for: error) == nil)
+    #expect(gate.reportOnce(forHTTPStatus: 500) == nil)
 }
 
 @MainActor
 @Test func loadFailureGateIgnoresCancelledNavigation() throws {
     var gate = LoadFailureGate()
     let cancelled = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
-    #expect(gate.message(for: cancelled) == nil)
-    #expect(gate.message(forHTTPStatus: 500) == "HTTP 500")
+    #expect(gate.reportOnce(for: cancelled) == nil)
+    #expect(gate.reportOnce(forHTTPStatus: 500) == "HTTP 500")
 }
 
 @MainActor
 @Test func loadFailureGateIgnoresSuccessfulStatusCodes() throws {
     var gate = LoadFailureGate()
-    #expect(gate.message(forHTTPStatus: 200) == nil)
-    #expect(gate.message(forHTTPStatus: 302) == nil)
-    #expect(gate.message(forHTTPStatus: 404) == "HTTP 404")
+    #expect(gate.reportOnce(forHTTPStatus: 200) == nil)
+    #expect(gate.reportOnce(forHTTPStatus: 302) == nil)
+    #expect(gate.reportOnce(forHTTPStatus: 404) == "HTTP 404")
 }

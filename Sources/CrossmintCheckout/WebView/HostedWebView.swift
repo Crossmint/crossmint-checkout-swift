@@ -32,30 +32,7 @@ struct HostedWebView: UIViewRepresentable {
     var onLoadFailure: ((String) -> Void)?
 
     func makeUIView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.allowsInlineMediaPlayback = true
-        config.mediaTypesRequiringUserActionForPlayback = []
-        config.defaultWebpagePreferences.preferredContentMode = .mobile
-        config.applicationNameForUserAgent = "CrossmintCheckout"
-
-        config.userContentController.addUserScript(
-            WKUserScript(source: WebViewBridge.shimScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
-        )
-        config.userContentController.add(context.coordinator, name: WebViewBridge.messageHandlerName)
-
-        if injectsViewportScript {
-            let viewportScript = """
-            var meta = document.createElement('meta');
-            meta.name = 'viewport';
-            meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-            document.getElementsByTagName('head')[0].appendChild(meta);
-            """
-            config.userContentController.addUserScript(
-                WKUserScript(source: viewportScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-            )
-        }
-
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: .zero, configuration: makeConfiguration(coordinator: context.coordinator))
         webView.scrollView.isScrollEnabled = isScrollEnabled
         webView.scrollView.bounces = false
         webView.scrollView.alwaysBounceVertical = false
@@ -74,6 +51,33 @@ struct HostedWebView: UIViewRepresentable {
         context.coordinator.load(url, in: webView)
 
         return webView
+    }
+
+    private func makeConfiguration(coordinator: Coordinator) -> WKWebViewConfiguration {
+        let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
+        config.mediaTypesRequiringUserActionForPlayback = []
+        config.defaultWebpagePreferences.preferredContentMode = .mobile
+        config.applicationNameForUserAgent = "CrossmintCheckout"
+
+        config.userContentController.addUserScript(
+            WKUserScript(source: WebViewBridge.shimScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        )
+        config.userContentController.add(coordinator, name: WebViewBridge.messageHandlerName)
+
+        if injectsViewportScript {
+            let viewportScript = """
+            var meta = document.createElement('meta');
+            meta.name = 'viewport';
+            meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+            document.getElementsByTagName('head')[0].appendChild(meta);
+            """
+            config.userContentController.addUserScript(
+                WKUserScript(source: viewportScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+            )
+        }
+
+        return config
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
@@ -133,7 +137,7 @@ struct HostedWebView: UIViewRepresentable {
         ) async -> WKNavigationResponsePolicy {
             if navigationResponse.isForMainFrame,
                let statusCode = (navigationResponse.response as? HTTPURLResponse)?.statusCode,
-               let message = loadFailureGate.message(forHTTPStatus: statusCode) {
+               let message = loadFailureGate.reportOnce(forHTTPStatus: statusCode) {
                 host.onLoadFailure?(message)
                 return .cancel
             }
@@ -149,7 +153,7 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         private func reportLoadFailure(_ error: Error) {
-            guard let message = loadFailureGate.message(for: error) else { return }
+            guard let message = loadFailureGate.reportOnce(for: error) else { return }
             host.onLoadFailure?(message)
         }
 

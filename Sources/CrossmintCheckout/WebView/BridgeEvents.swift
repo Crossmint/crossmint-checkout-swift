@@ -41,11 +41,28 @@ enum IdentityVerificationEvent {
 
 /// Requests the checkout page makes of a native crypto payer. This SDK has no payer support,
 /// so each one is answered with the page's no-payer reply instead of being left hanging.
-enum CryptoRequest {
+enum CryptoRequest: Equatable {
     case load
     case connectWalletShow(Bool)
     case sendTransaction
     case signMessage
+
+    /// The reply the page expects when no native payer exists; nil when no reply is due.
+    /// The separator inconsistency (".failed" vs ":failed") matches the page's event map exactly.
+    var noPayerReply: (event: String, data: [String: String])? {
+        switch self {
+        case .load:
+            ("crypto:load.success", [:])
+        case .connectWalletShow(false):
+            nil
+        case .connectWalletShow(true):
+            ("crypto:connect-wallet.failed", ["error": "No payer configured"])
+        case .sendTransaction:
+            ("crypto:send-transaction:failed", ["error": "No payer configured"])
+        case .signMessage:
+            ("crypto:sign-message:failed", ["error": "No payer configured"])
+        }
+    }
 }
 
 /// Events the embedded checkout page sends that this SDK acts on.
