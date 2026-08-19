@@ -132,3 +132,19 @@ import Testing
     #expect(credentials.inquiryId == "inq-123")
     #expect(credentials.sessionToken == "tok-1")
 }
+
+@MainActor
+@Test func verificationUrlIsStableAcrossGenerations() throws {
+    // Nondeterministic JSON key order in the URL caused an infinite webview reload loop:
+    // the view reloads whenever the regenerated URL string differs.
+    let verification = CrossmintIdentityVerification(
+        apiKey: "ck_test",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123", sessionToken: "tok-1"),
+        locale: .enUS,
+        environment: .staging
+    )
+    let first = try verification.generateVerificationUrl()
+    for _ in 0..<20 {
+        #expect(try verification.generateVerificationUrl() == first)
+    }
+}

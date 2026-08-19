@@ -10,7 +10,10 @@ import Foundation
 extension Encodable {
     func toJSON() throws -> String {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.withoutEscapingSlashes]
+        // sortedKeys keeps the serialized form stable across encodes: these strings end up in
+        // webview URLs that reload when they change, and JSONEncoder's default key order is
+        // nondeterministic, which caused an infinite reload loop on every SwiftUI re-render.
+        encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
         let data = try encoder.encode(self)
 
         guard let json = String(data: data, encoding: .utf8) else {
