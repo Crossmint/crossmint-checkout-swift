@@ -29,6 +29,17 @@ public struct CheckoutOrder: Decodable, Sendable {
     public struct Payment: Decodable, Sendable {
         public let status: String?
         public let preparation: Preparation?
+
+        private enum CodingKeys: String, CodingKey {
+            case status
+            case preparation
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            status = try? container.decodeIfPresent(String.self, forKey: .status)
+            preparation = try? container.decodeIfPresent(Preparation.self, forKey: .preparation)
+        }
     }
 
     /// The payment preparation section of an order.

@@ -147,3 +147,19 @@ private let REQUIRES_KYC_EVENT = #"""
     #expect(order.payment?.status == "requires-kyc")
     #expect(order.identityVerificationCredentials?.inquiryId == "inq-9")
 }
+
+@MainActor
+@Test func malformedStatusStillYieldsCredentials() throws {
+    let raw = #"{"event":"order:updated","data":{"order":{"payment":{"status":42,"preparation":{"kyc":{"provider":"persona","inquiryId":"inq-1"}}}}}}"#
+    let update = try orderUpdate(raw)
+    #expect(update.order?.payment?.status == nil)
+    #expect(update.order?.identityVerificationCredentials?.inquiryId == "inq-1")
+}
+
+@MainActor
+@Test func updateWithoutOrderKeepsPreviousOrder() throws {
+    let controller = CrossmintCheckoutController()
+    controller.handle(try orderUpdate(REQUIRES_KYC_EVENT))
+    controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"unrelated":true}}"#))
+    #expect(controller.order?.orderId == "order-1")
+}

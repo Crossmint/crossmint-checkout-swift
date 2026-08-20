@@ -146,3 +146,8 @@ import Testing
         #expect(try verification.generateVerificationUrl() == first)
     }
 }
+
+@MainActor
+@Test func credentialsIdentityIsTheInquiryId() throws {
+    #expect(IdentityVerificationCredentials(inquiryId: "inq-123").id == "inq-123")
+}

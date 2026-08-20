@@ -24,7 +24,9 @@ public struct CheckoutOrderUpdate: Decodable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         let nested = try? container.decodeIfPresent(CheckoutOrder.self, forKey: .order)
-        let flattened = (try? CheckoutOrder(from: decoder)).flatMap { $0.looksLikeOrder ? $0 : nil }
+        let flattened = nested == nil
+            ? (try? CheckoutOrder(from: decoder)).flatMap { $0.looksLikeOrder ? $0 : nil }
+            : nil
         let resolved = nested ?? flattened
         order = resolved
 
