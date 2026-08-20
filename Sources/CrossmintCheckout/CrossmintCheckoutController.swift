@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-/// Observable order state for one embedded checkout session.
+/// The observable order state of one embedded checkout session.
 ///
 /// Give an instance to ``CrossmintEmbeddedCheckout`` and observe it to react to order changes.
 /// When the order needs identity verification, ``identityVerificationCredentials`` becomes available.

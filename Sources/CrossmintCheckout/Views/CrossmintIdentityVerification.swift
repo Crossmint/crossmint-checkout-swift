@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Shows Crossmint's hosted identity verification (KYC) step in your own layout.
+/// A view that shows Crossmint's hosted identity verification (KYC) step.
 ///
 /// The view sets its own height. It starts at zero height and then follows the size of the hosted page.
 /// Use `onReady` to control your own loading indicator.

@@ -136,7 +136,7 @@ struct CheckoutView: View {
             environment: .production
         )
         .onReceive(controller.$order) { order in
-            print("Order phase: \(order?.phase ?? "-")")
+            print("Order phase: \(String(describing: order?.phase))")
         }
     }
 }

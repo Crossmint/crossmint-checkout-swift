@@ -8,25 +8,30 @@
 import Foundation
 
 /// An order as the embedded checkout page reports it.
-///
-/// The decoder is tolerant. The backend adds order fields and values faster than any client model,
-/// so an unknown field or value never fails the decode.
 public struct CheckoutOrder: Decodable, Sendable {
     public let orderId: String?
-    public let phase: String?
+    public let phase: Phase?
     public let payment: Payment?
 
     let clientSecret: String?
 
-    /// The payment section of the order.
+    /// A stage in the life of an order.
+    public enum Phase: String, Decodable, Sendable {
+        case quote
+        case payment
+        case delivery
+        case completed
+    }
+
+    /// The payment section of an order.
     ///
-    /// The `status` field is an open string. The value `requires-kyc` shows the order waits on identity verification.
+    /// The `status` value `requires-kyc` means the order waits on identity verification.
     public struct Payment: Decodable, Sendable {
         public let status: String?
         public let preparation: Preparation?
     }
 
-    /// The payment preparation section of the order.
+    /// The payment preparation section of an order.
     public struct Preparation: Decodable, Sendable {
         public let kyc: IdentityVerificationCredentials?
 
@@ -56,7 +61,7 @@ public struct CheckoutOrder: Decodable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         orderId = Self.string(.orderId, in: container) ?? Self.string(.id, in: container)
-        phase = Self.string(.phase, in: container)
+        phase = try? container.decodeIfPresent(Phase.self, forKey: .phase)
         payment = try? container.decodeIfPresent(Payment.self, forKey: .payment)
         clientSecret = Self.string(.clientSecret, in: container)
     }

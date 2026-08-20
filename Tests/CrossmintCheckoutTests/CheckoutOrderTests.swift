@@ -45,7 +45,7 @@ private let REQUIRES_KYC_EVENT = #"""
 @Test func readsOrderFieldsAndRequiresKycStatus() throws {
     let order = try #require(try orderUpdate(REQUIRES_KYC_EVENT).order)
     #expect(order.orderId == "order-1")
-    #expect(order.phase == "payment")
+    #expect(order.phase == .payment)
     #expect(order.payment?.status == "requires-kyc")
 }
 
@@ -79,6 +79,14 @@ private let REQUIRES_KYC_EVENT = #"""
 }
 
 @MainActor
+@Test func unknownPhaseDecodesAsNil() throws {
+    let update = try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o","phase":"a-future-phase"}}}"#)
+    let order = try #require(update.order)
+    #expect(order.phase == nil)
+    #expect(order.orderId == "o")
+}
+
+@MainActor
 @Test func payloadWithoutOrderShapeYieldsNoOrder() throws {
     let raw = #"{"event":"order:updated","data":{"unrelated":true}}"#
     let update = try orderUpdate(raw)
@@ -107,7 +115,7 @@ private let REQUIRES_KYC_EVENT = #"""
 
     controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"order-1","phase":"delivery"}}}"#))
     #expect(controller.orderClientSecret == "cs-1")
-    #expect(controller.order?.phase == "delivery")
+    #expect(controller.order?.phase == .delivery)
 }
 
 @MainActor

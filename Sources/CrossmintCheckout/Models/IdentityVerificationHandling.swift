@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Controls who shows the identity verification (KYC) step of embedded checkout.
+/// The presentation mode for the identity verification (KYC) step of embedded checkout.
 ///
 /// Do not set it and checkout shows the step itself. Set `external` and checkout shows nothing for that step.
 /// You must then show ``CrossmintIdentityVerification`` with the order's credentials, or the buyer cannot finish.

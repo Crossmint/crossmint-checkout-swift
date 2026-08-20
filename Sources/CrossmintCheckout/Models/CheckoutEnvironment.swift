@@ -13,6 +13,9 @@ public enum CheckoutEnvironment: Sendable {
     case production
 
     var crossmintHost: String {
-        self == .production ? "www.crossmint.com" : "staging.crossmint.com"
+        switch self {
+        case .staging: "staging.crossmint.com"
+        case .production: "www.crossmint.com"
+        }
     }
 }
