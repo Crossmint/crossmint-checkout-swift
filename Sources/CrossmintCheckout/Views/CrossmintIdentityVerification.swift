@@ -7,13 +7,12 @@
 
 import SwiftUI
 
-/// Renders Crossmint's hosted identity verification (KYC) step in your own layout.
+/// Shows Crossmint's hosted identity verification (KYC) step in your own layout.
 ///
-/// The view is self-sizing: it renders at zero height until the hosted page reports its content
-/// height, then tracks it. Use `onReady` to drive your own loading UI.
+/// The view sets its own height. It starts at zero height and then follows the size of the hosted page.
+/// Use `onReady` to control your own loading indicator.
 ///
-/// Document capture needs camera access: add `NSCameraUsageDescription` to your app's Info.plist,
-/// or the capture step fails.
+/// Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist.
 public struct CrossmintIdentityVerification: View {
     private let apiKey: String
     private let credentials: IdentityVerificationCredentials
@@ -55,7 +54,7 @@ public struct CrossmintIdentityVerification: View {
                 allowsMediaCapture: true,
                 isScrollEnabled: true,
                 injectsViewportScript: false,
-                onEnvelope: { envelope, _ in handle(envelope) },
+                onMessage: { body, _ in handle(body) },
                 onLoadFailure: { message in
                     onError?(IdentityVerificationError(
                         retriable: false,
@@ -81,8 +80,9 @@ public struct CrossmintIdentityVerification: View {
         }
     }
 
-    private func handle(_ envelope: BridgeEnvelope) {
-        guard let event = IdentityVerificationEvent(envelope: envelope) else { return }
+    @MainActor
+    private func handle(_ messageBody: Any) {
+        guard let event = IdentityVerificationEvent(messageBody: messageBody) else { return }
         switch event {
         case .heightChanged(let reported):
             guard reported.isFinite, reported > 0 else { return }

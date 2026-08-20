@@ -8,28 +8,22 @@
 import SwiftUI
 import WebKit
 
-/// Sends messages to the hosted page. Inert unless the page defined a listener.
-@MainActor
-final class BridgeResponder {
-    weak var webView: WKWebView?
-
-    func send(event: String, data: [String: String]) {
-        guard let script = try? WebViewBridge.dispatchScript(event: event, data: data) else { return }
-        webView?.evaluateJavaScript(script)
-    }
-}
-
-/// WebView host shared by ``CrossmintEmbeddedCheckout`` and ``CrossmintIdentityVerification``:
-/// installs the ``WebViewBridge`` shim, forwards page events, and applies the caller's navigation
-/// policy. Everything the two views do differently is an init parameter.
 struct HostedWebView: UIViewRepresentable {
     let url: String
     let navigationPolicy: NavigationPolicy
     var allowsMediaCapture = false
     var isScrollEnabled = false
     var injectsViewportScript = true
-    var onEnvelope: @MainActor (BridgeEnvelope, BridgeResponder) -> Void = { _, _ in }
+    var onMessage: @MainActor (Any, BridgeResponder) -> Void = { _, _ in }
     var onLoadFailure: ((String) -> Void)?
+
+    private static let messageHandlerName = "crossmint"
+
+    private static let bridgeShimScript = """
+    window.ReactNativeWebView = { postMessage: function(message) {
+        window.webkit.messageHandlers.\(messageHandlerName).postMessage(message);
+    } };
+    """
 
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView(frame: .zero, configuration: makeConfiguration(coordinator: context.coordinator))
@@ -61,9 +55,9 @@ struct HostedWebView: UIViewRepresentable {
         config.applicationNameForUserAgent = "CrossmintCheckout"
 
         config.userContentController.addUserScript(
-            WKUserScript(source: WebViewBridge.shimScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+            WKUserScript(source: Self.bridgeShimScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         )
-        config.userContentController.add(coordinator, name: WebViewBridge.messageHandlerName)
+        config.userContentController.add(coordinator, name: Self.messageHandlerName)
 
         if injectsViewportScript {
             let viewportScript = """
@@ -92,10 +86,8 @@ struct HostedWebView: UIViewRepresentable {
     }
 
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
-        // The user content controller retains its message handler; without this the
-        // coordinator (and the web view) leak on dismount.
         uiView.configuration.userContentController.removeScriptMessageHandler(
-            forName: WebViewBridge.messageHandlerName
+            forName: messageHandlerName
         )
     }
 
@@ -118,8 +110,7 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard let envelope = WebViewBridge.parse(message.body) else { return }
-            host.onEnvelope(envelope, responder)
+            host.onMessage(message.body, responder)
         }
 
         func webView(
@@ -164,8 +155,6 @@ struct HostedWebView: UIViewRepresentable {
             type: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void
         ) {
-            // .prompt is WebKit's behavior when no delegate is set — kept for the checkout
-            // view so installing this delegate changes nothing for existing integrations.
             decisionHandler(host.allowsMediaCapture ? .grant : .prompt)
         }
     }

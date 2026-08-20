@@ -55,7 +55,7 @@ public struct CrossmintEmbeddedCheckout: View {
             HostedWebView(
                 url: url,
                 navigationPolicy: .permissive,
-                onEnvelope: handle
+                onMessage: handle
             )
         case .failure(let error):
             VStack(spacing: 20) {
@@ -70,8 +70,8 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     @MainActor
-    private func handle(_ envelope: BridgeEnvelope, _ responder: BridgeResponder) {
-        guard let event = CheckoutEvent(envelope: envelope) else { return }
+    private func handle(_ messageBody: Any, _ responder: BridgeResponder) {
+        guard let event = CheckoutEvent(messageBody: messageBody) else { return }
         switch event {
         case .orderUpdated(let update):
             controller?.handle(update)
@@ -79,14 +79,9 @@ public struct CrossmintEmbeddedCheckout: View {
         case .orderCreationFailed(let message):
             onOrderCreationFailed?(message)
         case .cryptoRequest(let request):
-            reply(to: request, via: responder)
+            guard let reply = request.noPayerReply else { return }
+            responder.send(reply)
         }
-    }
-
-    @MainActor
-    private func reply(to request: CryptoRequest, via responder: BridgeResponder) {
-        guard let reply = request.noPayerReply else { return }
-        responder.send(event: reply.event, data: reply.data)
     }
 
     private var checkoutUrlResult: Result<String, Error> {
@@ -151,14 +146,5 @@ public struct CrossmintEmbeddedCheckout: View {
         }
 
         return url
-    }
-}
-
-public enum CheckoutEnvironment: Sendable {
-    case staging
-    case production
-
-    var crossmintHost: String {
-        self == .production ? "www.crossmint.com" : "staging.crossmint.com"
     }
 }

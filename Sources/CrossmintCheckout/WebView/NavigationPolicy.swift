@@ -7,14 +7,8 @@
 
 import Foundation
 
-/// Decides which navigations a hosted webview may perform.
-///
-/// Sub-frame navigations are always allowed (minus unsafe schemes): the verification provider
-/// renders its capture flow in an iframe on its own domain.
 enum NavigationPolicy {
-    /// Any destination. The embedded checkout page navigates to payment providers and receipts.
     case permissive
-    /// Main-frame navigations may only stay on Crossmint hosts.
     case crossmintMainFrame(resolvedHost: String)
 
     func allows(url: URL, isMainFrame: Bool) -> Bool {
@@ -32,31 +26,5 @@ enum NavigationPolicy {
             let host = url.host?.lowercased()
             return host == resolvedHost.lowercased() || host == "crossmint.com"
         }
-    }
-}
-
-/// Collapses a webview's load failures into a single report.
-///
-/// A failed main-frame load produces no page event, so the host synthesizes one — but navigation
-/// delegates can fail more than once for one user-visible breakage, and the merchant should hear
-/// about it once.
-struct LoadFailureGate {
-    private var hasFired = false
-
-    mutating func reportOnce(for error: Error) -> String? {
-        let nsError = error as NSError
-        guard nsError.code != NSURLErrorCancelled else { return nil }
-        return reportOnce(message: nsError.localizedDescription)
-    }
-
-    mutating func reportOnce(forHTTPStatus statusCode: Int) -> String? {
-        guard statusCode >= 400 else { return nil }
-        return reportOnce(message: "HTTP \(statusCode)")
-    }
-
-    private mutating func reportOnce(message: String) -> String? {
-        guard !hasFired else { return nil }
-        hasFired = true
-        return message
     }
 }

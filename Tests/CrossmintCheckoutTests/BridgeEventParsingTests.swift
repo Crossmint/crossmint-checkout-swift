@@ -8,20 +8,15 @@
 import Testing
 @testable import CrossmintCheckout
 
-private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
-    guard let envelope = WebViewBridge.parse(raw) else { return nil }
-    return IdentityVerificationEvent(envelope: envelope)
-}
-
 @MainActor
 @Test func parsesHeightChangedFromIntAndDouble() throws {
-    guard case .heightChanged(let intHeight)? = identityEvent(#"{"event":"ui:height.changed","data":{"height":660}}"#) else {
+    guard case .heightChanged(let intHeight)? = IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":660}}"#) else {
         Issue.record("expected heightChanged")
         return
     }
     #expect(intHeight == 660)
 
-    guard case .heightChanged(let doubleHeight)? = identityEvent(#"{"event":"ui:height.changed","data":{"height":660.5}}"#) else {
+    guard case .heightChanged(let doubleHeight)? = IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":660.5}}"#) else {
         Issue.record("expected heightChanged")
         return
     }
@@ -30,13 +25,21 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 
 @MainActor
 @Test func ignoresHeightChangedWithoutNumericHeight() throws {
-    #expect(identityEvent(#"{"event":"ui:height.changed","data":{}}"#) == nil)
-    #expect(identityEvent(#"{"event":"ui:height.changed","data":{"height":"tall"}}"#) == nil)
+    #expect(IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{}}"#) == nil)
+    #expect(IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":"tall"}}"#) == nil)
 }
 
 @MainActor
 @Test func parsesKycReady() throws {
-    guard case .ready? = identityEvent(#"{"event":"kyc:ready","data":{}}"#) else {
+    guard case .ready? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:ready","data":{}}"#) else {
+        Issue.record("expected ready")
+        return
+    }
+}
+
+@MainActor
+@Test func parsesKycReadyWithoutData() throws {
+    guard case .ready? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:ready"}"#) else {
         Issue.record("expected ready")
         return
     }
@@ -54,7 +57,7 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
         ("unknown", .unknown)
     ]
     for (wire, expected) in statuses {
-        guard case .completed(let status)? = identityEvent(#"{"event":"kyc:completed","data":{"status":"\#(wire)"}}"#) else {
+        guard case .completed(let status)? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:completed","data":{"status":"\#(wire)"}}"#) else {
             Issue.record("expected completed for \(wire)")
             return
         }
@@ -64,7 +67,7 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 
 @MainActor
 @Test func unknownStatusFallsBackToUnknown() throws {
-    guard case .completed(let status)? = identityEvent(#"{"event":"kyc:completed","data":{"status":"a-future-status"}}"#) else {
+    guard case .completed(let status)? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:completed","data":{"status":"a-future-status"}}"#) else {
         Issue.record("expected completed")
         return
     }
@@ -73,7 +76,7 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 
 @MainActor
 @Test func parsesKycCancelled() throws {
-    guard case .cancelled? = identityEvent(#"{"event":"kyc:cancelled","data":{}}"#) else {
+    guard case .cancelled? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:cancelled","data":{}}"#) else {
         Issue.record("expected cancelled")
         return
     }
@@ -90,7 +93,7 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
     ]
     for (wire, expected) in reasons {
         let raw = #"{"event":"kyc:error","data":{"retriable":true,"reason":"\#(wire)","message":"boom"}}"#
-        guard case .failed(let error)? = identityEvent(raw) else {
+        guard case .failed(let error)? = IdentityVerificationEvent(messageBody: raw) else {
             Issue.record("expected failed for \(wire)")
             return
         }
@@ -102,7 +105,7 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 
 @MainActor
 @Test func unknownReasonFallsBackToUnknown() throws {
-    guard case .failed(let error)? = identityEvent(#"{"event":"kyc:error","data":{"retriable":false,"reason":"a-future-reason","message":"m"}}"#) else {
+    guard case .failed(let error)? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:error","data":{"retriable":false,"reason":"a-future-reason","message":"m"}}"#) else {
         Issue.record("expected failed")
         return
     }
@@ -112,7 +115,7 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 
 @MainActor
 @Test func missingErrorFieldsUseSafeDefaults() throws {
-    guard case .failed(let error)? = identityEvent(#"{"event":"kyc:error","data":{}}"#) else {
+    guard case .failed(let error)? = IdentityVerificationEvent(messageBody: #"{"event":"kyc:error","data":{}}"#) else {
         Issue.record("expected failed")
         return
     }
@@ -123,30 +126,33 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 
 @MainActor
 @Test func ignoresFrameReadyBareString() throws {
-    #expect(WebViewBridge.parse("frame-ready") == nil)
+    #expect(IdentityVerificationEvent(messageBody: "frame-ready") == nil)
+    #expect(CheckoutEvent(messageBody: "frame-ready") == nil)
 }
 
 @MainActor
 @Test func ignoresConsoleEnvelope() throws {
-    #expect(WebViewBridge.parse(#"{"type":"console.log","data":["hello"]}"#) == nil)
+    #expect(IdentityVerificationEvent(messageBody: #"{"type":"console.log","data":["hello"]}"#) == nil)
+    #expect(CheckoutEvent(messageBody: #"{"type":"console.log","data":["hello"]}"#) == nil)
 }
 
 @MainActor
 @Test func ignoresMalformedJsonAndNonStringBodies() throws {
-    #expect(WebViewBridge.parse(#"{"event":"#) == nil)
-    #expect(WebViewBridge.parse(42) == nil)
-    #expect(WebViewBridge.parse(["event": "kyc:ready"]) == nil)
+    #expect(IdentityVerificationEvent(messageBody: #"{"event":"#) == nil)
+    #expect(IdentityVerificationEvent(messageBody: 42) == nil)
+    #expect(IdentityVerificationEvent(messageBody: ["event": "kyc:ready"]) == nil)
 }
 
 @MainActor
 @Test func ignoresUnknownEvent() throws {
-    #expect(identityEvent(#"{"event":"kyc:launched","data":{}}"#) == nil)
+    #expect(IdentityVerificationEvent(messageBody: #"{"event":"kyc:launched","data":{}}"#) == nil)
+    #expect(CheckoutEvent(messageBody: #"{"event":"kyc:launched","data":{}}"#) == nil)
 }
 
 @MainActor
 @Test func toleratesExtraKeys() throws {
     let raw = #"{"event":"kyc:completed","data":{"status":"verified","attempt":2},"origin":"page"}"#
-    guard case .completed(let status)? = identityEvent(raw) else {
+    guard case .completed(let status)? = IdentityVerificationEvent(messageBody: raw) else {
         Issue.record("expected completed")
         return
     }
@@ -154,55 +160,48 @@ private func identityEvent(_ raw: String) -> IdentityVerificationEvent? {
 }
 
 @MainActor
-@Test func missingDataDefaultsToEmpty() throws {
-    let envelope = try #require(WebViewBridge.parse(#"{"event":"kyc:ready"}"#))
-    #expect(envelope.data.isEmpty)
-}
-
-@MainActor
 @Test func mapsCryptoEventsToCryptoRequests() throws {
-    func checkoutEvent(_ raw: String) -> CheckoutEvent? {
-        guard let envelope = WebViewBridge.parse(raw) else { return nil }
-        return CheckoutEvent(envelope: envelope)
-    }
-
-    guard case .cryptoRequest(.load)? = checkoutEvent(#"{"event":"crypto:load","data":{}}"#) else {
+    guard case .cryptoRequest(.load)? = CheckoutEvent(messageBody: #"{"event":"crypto:load","data":{}}"#) else {
         Issue.record("expected load")
         return
     }
-    guard case .cryptoRequest(.connectWalletShow(true))? = checkoutEvent(#"{"event":"crypto:connect-wallet.show","data":{"show":true}}"#) else {
+    guard case .cryptoRequest(.connectWalletShow(true))? = CheckoutEvent(messageBody: #"{"event":"crypto:connect-wallet.show","data":{"show":true}}"#) else {
         Issue.record("expected connectWalletShow(true)")
         return
     }
-    guard case .cryptoRequest(.connectWalletShow(false))? = checkoutEvent(#"{"event":"crypto:connect-wallet.show","data":{"show":false}}"#) else {
+    guard case .cryptoRequest(.connectWalletShow(false))? = CheckoutEvent(messageBody: #"{"event":"crypto:connect-wallet.show","data":{"show":false}}"#) else {
         Issue.record("expected connectWalletShow(false)")
         return
     }
-    guard case .cryptoRequest(.sendTransaction)? = checkoutEvent(#"{"event":"crypto:send-transaction","data":{"chain":"base","serializedTransaction":"0x"}}"#) else {
+    guard case .cryptoRequest(.sendTransaction)? = CheckoutEvent(messageBody: #"{"event":"crypto:send-transaction","data":{"chain":"base","serializedTransaction":"0x"}}"#) else {
         Issue.record("expected sendTransaction")
         return
     }
-    guard case .cryptoRequest(.signMessage)? = checkoutEvent(#"{"event":"crypto:sign-message","data":{"message":"m"}}"#) else {
+    guard case .cryptoRequest(.signMessage)? = CheckoutEvent(messageBody: #"{"event":"crypto:sign-message","data":{"message":"m"}}"#) else {
         Issue.record("expected signMessage")
         return
     }
 }
 
 @MainActor
-@Test func dispatchScriptEscapesSingleQuotesAndNewlines() throws {
-    let script = try WebViewBridge.dispatchScript(event: "crypto:load.success", data: ["error": "it's\nbroken"])
-    #expect(script.contains("crypto:load.success"))
-    #expect(script.contains(#"\'"#) || !script.contains("it's"))
-    #expect(!script.contains("it's\nbroken"))
+@Test func noPayerRepliesMatchThePageEventMap() throws {
+    #expect(CryptoRequest.load.noPayerReply == BridgeReply(event: "crypto:load.success", error: nil))
+    #expect(CryptoRequest.connectWalletShow(false).noPayerReply == nil)
+    #expect(CryptoRequest.connectWalletShow(true).noPayerReply == BridgeReply(event: "crypto:connect-wallet.failed", error: "No payer configured"))
+    #expect(CryptoRequest.sendTransaction.noPayerReply == BridgeReply(event: "crypto:send-transaction:failed", error: "No payer configured"))
+    #expect(CryptoRequest.signMessage.noPayerReply == BridgeReply(event: "crypto:sign-message:failed", error: "No payer configured"))
 }
 
 @MainActor
-@Test func noPayerRepliesMatchThePageEventMap() throws {
-    #expect(CryptoRequest.load.noPayerReply?.event == "crypto:load.success")
-    #expect(CryptoRequest.load.noPayerReply?.data == [:])
-    #expect(CryptoRequest.connectWalletShow(false).noPayerReply == nil)
-    #expect(CryptoRequest.connectWalletShow(true).noPayerReply?.event == "crypto:connect-wallet.failed")
-    #expect(CryptoRequest.sendTransaction.noPayerReply?.event == "crypto:send-transaction:failed")
-    #expect(CryptoRequest.signMessage.noPayerReply?.event == "crypto:sign-message:failed")
-    #expect(CryptoRequest.signMessage.noPayerReply?.data == ["error": "No payer configured"])
+@Test func replyScriptEmbedsValidJson() throws {
+    let script = try #require(BridgeResponder.script(for: BridgeReply(event: "crypto:load.success", error: nil)))
+    #expect(script.contains(#"{"data":{},"event":"crypto:load.success"}"#))
+    #expect(script.contains("JSON.stringify(message)"))
+}
+
+@MainActor
+@Test func replyScriptEscapesErrorTextThroughJsonEncoding() throws {
+    let script = try #require(BridgeResponder.script(for: BridgeReply(event: "crypto:sign-message:failed", error: "it's\nbroken")))
+    #expect(!script.contains("it's\nbroken"))
+    #expect(script.contains(#"it's\nbroken"#))
 }

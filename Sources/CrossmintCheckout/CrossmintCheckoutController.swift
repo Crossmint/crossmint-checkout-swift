@@ -8,25 +8,24 @@
 import Foundation
 import Combine
 
-/// Observable order state for an embedded checkout session.
+/// Observable order state for one embedded checkout session.
 ///
-/// Pass an instance to ``CrossmintEmbeddedCheckout`` and observe it to react to order changes —
-/// most notably ``identityVerificationCredentials`` appearing when the order requires KYC and you
-/// render the step yourself via ``IdentityVerificationHandling/external``.
-///
-/// Reusing a controller across checkout sessions requires ``clear()`` first.
+/// Give an instance to ``CrossmintEmbeddedCheckout`` and observe it to react to order changes.
+/// When the order needs identity verification, ``identityVerificationCredentials`` becomes available.
+/// Call ``clear()`` before you use one controller for a new checkout session.
 @MainActor
 public final class CrossmintCheckoutController: ObservableObject {
     @Published public private(set) var order: CheckoutOrder?
     @Published public private(set) var orderClientSecret: String?
 
-    /// Credentials for the pending identity verification, when the order is waiting on one.
+    /// The credentials for the pending identity verification, when the order waits on one.
     public var identityVerificationCredentials: IdentityVerificationCredentials? {
         order?.identityVerificationCredentials
     }
 
     public init() {}
 
+    /// Removes the stored order state.
     public func clear() {
         order = nil
         orderClientSecret = nil
@@ -36,7 +35,6 @@ public final class CrossmintCheckoutController: ObservableObject {
         if let updatedOrder = update.order {
             order = updatedOrder
         }
-        // Later updates may omit the secret; the stored one stays valid.
         if let secret = update.orderClientSecret {
             orderClientSecret = secret
         }

@@ -10,8 +10,10 @@ import Testing
 @testable import CrossmintCheckout
 
 private func orderUpdate(_ raw: String) throws -> CheckoutOrderUpdate {
-    let envelope = try #require(WebViewBridge.parse(raw))
-    return CheckoutOrderUpdate(data: envelope.data)
+    guard case .orderUpdated(let update)? = CheckoutEvent(messageBody: raw) else {
+        throw CheckoutError.invalidConfiguration("expected an order:updated event")
+    }
+    return update
 }
 
 private let REQUIRES_KYC_EVENT = #"""
@@ -44,7 +46,7 @@ private let REQUIRES_KYC_EVENT = #"""
     let order = try #require(try orderUpdate(REQUIRES_KYC_EVENT).order)
     #expect(order.orderId == "order-1")
     #expect(order.phase == "payment")
-    #expect(order.paymentStatus == "requires-kyc")
+    #expect(order.payment?.status == "requires-kyc")
 }
 
 @MainActor
@@ -120,8 +122,7 @@ private let REQUIRES_KYC_EVENT = #"""
 
 @MainActor
 @Test func orderCreationFailedForwardsMessage() throws {
-    let envelope = try #require(WebViewBridge.parse(#"{"event":"order:creation-failed","data":{"errorMessage":"nope"}}"#))
-    guard case .orderCreationFailed(let message)? = CheckoutEvent(envelope: envelope) else {
+    guard case .orderCreationFailed(let message)? = CheckoutEvent(messageBody: #"{"event":"order:creation-failed","data":{"errorMessage":"nope"}}"#) else {
         Issue.record("expected orderCreationFailed")
         return
     }
@@ -135,6 +136,6 @@ private let REQUIRES_KYC_EVENT = #"""
     """#.utf8)
     let order = try JSONDecoder().decode(CheckoutOrder.self, from: json)
     #expect(order.orderId == "order-9")
-    #expect(order.paymentStatus == "requires-kyc")
+    #expect(order.payment?.status == "requires-kyc")
     #expect(order.identityVerificationCredentials?.inquiryId == "inq-9")
 }
