@@ -52,7 +52,12 @@ public struct CheckoutOrder: Decodable, Sendable {
 
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            kyc = try? container.decodeIfPresent(IdentityVerificationCredentials.self, forKey: .kyc)
+            do {
+                kyc = try container.decodeIfPresent(IdentityVerificationCredentials.self, forKey: .kyc)
+            } catch {
+                CheckoutLog.decoding.error("Ignoring an undecodable payment.preparation.kyc payload: \(error)")
+                kyc = nil
+            }
         }
     }
 

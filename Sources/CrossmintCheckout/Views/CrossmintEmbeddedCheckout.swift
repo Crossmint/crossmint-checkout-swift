@@ -68,14 +68,7 @@ public struct CrossmintEmbeddedCheckout: View {
                 onMessage: handle
             )
         case .failure(let error):
-            VStack(spacing: 20) {
-                Text("Error")
-                    .font(.headline)
-                Text(error.localizedDescription)
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-                    .padding()
-            }
+            CheckoutErrorView(error: error)
         }
     }
 
