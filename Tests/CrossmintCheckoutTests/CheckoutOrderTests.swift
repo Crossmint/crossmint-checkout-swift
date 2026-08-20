@@ -163,3 +163,19 @@ private let REQUIRES_KYC_EVENT = #"""
     controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"unrelated":true}}"#))
     #expect(controller.order?.orderId == "order-1")
 }
+
+@MainActor
+@Test func fallsBackToTheIdKeyForTheOrderId() throws {
+    let update = try orderUpdate(#"{"event":"order:updated","data":{"order":{"id":"order-3","phase":"quote"}}}"#)
+    #expect(update.order?.orderId == "order-3")
+}
+
+@MainActor
+@Test func malformedKycShapeYieldsNilCredentials() throws {
+    let stringKyc = try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o","payment":{"status":"requires-kyc","preparation":{"kyc":"not-an-object"}}}}}"#)
+    #expect(stringKyc.order?.identityVerificationCredentials == nil)
+    #expect(stringKyc.order?.payment?.status == "requires-kyc")
+
+    let numberPreparation = try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o","payment":{"status":"requires-kyc","preparation":7}}}}"#)
+    #expect(numberPreparation.order?.identityVerificationCredentials == nil)
+}

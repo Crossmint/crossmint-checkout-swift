@@ -110,6 +110,7 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.frameInfo.isMainFrame else { return }
             host.onMessage(message.body, responder)
         }
 
@@ -155,7 +156,7 @@ struct HostedWebView: UIViewRepresentable {
             type: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void
         ) {
-            decisionHandler(host.allowsMediaCapture ? .grant : .prompt)
+            decisionHandler(host.allowsMediaCapture && type == .camera ? .grant : .prompt)
         }
     }
 }
