@@ -148,24 +148,27 @@ Reusing a controller across checkout sessions requires calling `clear()` first.
 
 Some orders require identity verification before payment. By default checkout renders that step inline and you do nothing.
 
-To render the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them.
+To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: the credentials appear when the order needs verification, and they go away when the backend confirms it.
 
 ```swift
 struct CheckoutView: View {
     @StateObject private var controller = CrossmintCheckoutController()
+    @State private var kycCredentials: IdentityVerificationCredentials?
 
     var body: some View {
-        ScrollView {
-            CrossmintEmbeddedCheckout(
-                apiKey: "ck_production_...",
-                orderId: orderId,
-                clientSecret: clientSecret,
-                identityVerificationHandling: .external,
-                controller: controller,
-                environment: .production
-            )
-
-            if let credentials = controller.identityVerificationCredentials {
+        CrossmintEmbeddedCheckout(
+            apiKey: "ck_production_...",
+            orderId: orderId,
+            clientSecret: clientSecret,
+            identityVerificationHandling: .external,
+            controller: controller,
+            environment: .production
+        )
+        .onReceive(controller.$order) { _ in
+            kycCredentials = controller.identityVerificationCredentials
+        }
+        .sheet(item: $kycCredentials) { credentials in
+            ScrollView {
                 CrossmintIdentityVerification(
                     apiKey: "ck_production_...",
                     credentials: credentials,
@@ -179,7 +182,7 @@ struct CheckoutView: View {
 }
 ```
 
-Checkout does not depend on a completion signal from your component. It polls the order until the backend confirms the verification, then continues on its own.
+Checkout does not wait for a signal from your component. It polls the order until the backend confirms the verification, then continues on its own.
 
 `CrossmintIdentityVerification` can also be used standalone, without embedded checkout, if you obtain the credentials from your backend's order response (`payment.preparation.kyc`).
 
