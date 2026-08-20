@@ -164,8 +164,8 @@ struct CheckoutView: View {
             controller: controller,
             environment: .production
         )
-        .onReceive(controller.$order) { _ in
-            kycCredentials = controller.identityVerificationCredentials
+        .onReceive(controller.$order) { order in
+            kycCredentials = order?.identityVerificationCredentials
         }
         .sheet(item: $kycCredentials) { credentials in
             CrossmintIdentityVerification(

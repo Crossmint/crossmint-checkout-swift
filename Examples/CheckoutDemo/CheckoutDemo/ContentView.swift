@@ -38,19 +38,17 @@ struct ContentView: View {
             controller: controller,
             environment: .staging
         )
-        .onReceive(controller.$order) { _ in
-            kycCredentials = controller.identityVerificationCredentials
+        .onReceive(controller.$order) { order in
+            kycCredentials = order?.identityVerificationCredentials
         }
         .sheet(item: $kycCredentials) { credentials in
-            ScrollView {
-                CrossmintIdentityVerification(
-                    apiKey: "ck_production_...",
-                    credentials: credentials,
-                    environment: .staging,
-                    onComplete: { status in print("Identity verification finished: \(status)") },
-                    onError: { error in print("Identity verification error: \(error.message)") }
-                )
-            }
+            CrossmintIdentityVerification(
+                apiKey: "ck_production_...",
+                credentials: credentials,
+                environment: .staging,
+                onComplete: { status in print("Identity verification finished: \(status)") },
+                onError: { error in print("Identity verification error: \(error.message)") }
+            )
         }
     }
 }
