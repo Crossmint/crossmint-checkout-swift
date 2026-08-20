@@ -69,8 +69,6 @@ struct CheckoutView: View {
 | `recipient` | `CheckoutRecipient?` | No | Recipient configuration (not yet implemented) |
 | `identityVerificationHandling` | `IdentityVerificationHandling?` | No | `.external` renders no KYC step inside checkout; you present it yourself (see below) |
 | `controller` | `CrossmintCheckoutController?` | No | Observable order state (order, client secret, KYC credentials) |
-| `onOrderUpdated` | `((CheckoutOrderUpdate) -> Void)?` | No | Called on every order update from the checkout page |
-| `onOrderCreationFailed` | `((String) -> Void)?` | No | Called with the error message when order creation fails |
 
 ### Payment Configuration
 
@@ -142,6 +140,8 @@ struct CheckoutView: View {
 }
 ```
 
+Order events are also available as chained methods: `.onOrderUpdated { update in }` and `.onOrderCreationFailed { message in }`.
+
 Reusing a controller across checkout sessions requires calling `clear()` first.
 
 ## Identity Verification (KYC)
@@ -170,11 +170,10 @@ struct CheckoutView: View {
         .sheet(item: $kycCredentials) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
-                credentials: credentials,
-                environment: .production,
-                onComplete: { status in print("KYC finished: \(status)") },
-                onError: { error in print("KYC error: \(error.message)") }
+                credentials: credentials
             )
+            .onComplete { status in print("KYC finished: \(status)") }
+            .onError { error in print("KYC error: \(error.message)") }
         }
     }
 }
@@ -191,11 +190,17 @@ Checkout does not wait for a signal from your component. It polls the order unti
 | `apiKey` | `String` | Yes | Your client-side API key (`ck_...`) |
 | `credentials` | `IdentityVerificationCredentials` | Yes | From the controller or your backend's order response |
 | `locale` | `CheckoutLocale?` | No | UI language of the verification flow |
-| `environment` | `CheckoutEnvironment` | No | `.staging` (default) or `.production` |
-| `onReady` | `(() -> Void)?` | No | The verification UI finished loading |
-| `onComplete` | `((IdentityVerificationStatus) -> Void)?` | No | The buyer finished; carries the outcome |
-| `onCancel` | `(() -> Void)?` | No | The buyer dismissed the flow |
-| `onError` | `((IdentityVerificationError) -> Void)?` | No | Something failed; `retriable` says whether presenting again can work |
+
+### Event handlers
+
+Attach handlers with chained methods, all optional:
+
+- `.onReady { }` — the verification UI finished loading
+- `.onComplete { status in }` — the buyer finished; the status carries the outcome
+- `.onCancel { }` — the buyer dismissed the flow
+- `.onError { error in }` — something failed; `retriable` says whether showing the view again can work
+
+The Crossmint environment comes from the API key prefix (`ck_staging_...`, `ck_production_...`).
 
 The view fills the space you give it, and the verification content scrolls inside the view. Use `onReady` to drive your own loading indicator.
 

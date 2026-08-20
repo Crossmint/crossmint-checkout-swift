@@ -17,8 +17,8 @@ public struct CrossmintEmbeddedCheckout: View {
     private let appearance: CheckoutAppearance?
     private let identityVerificationHandling: IdentityVerificationHandling?
     private let controller: CrossmintCheckoutController?
-    private let onOrderUpdated: ((CheckoutOrderUpdate) -> Void)?
-    private let onOrderCreationFailed: ((String) -> Void)?
+    private var onOrderUpdatedHandler: ((CheckoutOrderUpdate) -> Void)?
+    private var onOrderCreationFailedHandler: ((String) -> Void)?
     private let environment: CheckoutEnvironment
 
     public init(
@@ -31,8 +31,6 @@ public struct CrossmintEmbeddedCheckout: View {
         appearance: CheckoutAppearance? = nil,
         identityVerificationHandling: IdentityVerificationHandling? = nil,
         controller: CrossmintCheckoutController? = nil,
-        onOrderUpdated: ((CheckoutOrderUpdate) -> Void)? = nil,
-        onOrderCreationFailed: ((String) -> Void)? = nil,
         environment: CheckoutEnvironment = .staging
     ) {
         self.apiKey = apiKey
@@ -44,9 +42,21 @@ public struct CrossmintEmbeddedCheckout: View {
         self.appearance = appearance
         self.identityVerificationHandling = identityVerificationHandling
         self.controller = controller
-        self.onOrderUpdated = onOrderUpdated
-        self.onOrderCreationFailed = onOrderCreationFailed
         self.environment = environment
+    }
+
+    /// Adds an action to perform on every order update from the checkout page.
+    public func onOrderUpdated(_ action: @escaping (CheckoutOrderUpdate) -> Void) -> Self {
+        var view = self
+        view.onOrderUpdatedHandler = action
+        return view
+    }
+
+    /// Adds an action to perform when order creation fails. The message describes the failure.
+    public func onOrderCreationFailed(_ action: @escaping (String) -> Void) -> Self {
+        var view = self
+        view.onOrderCreationFailedHandler = action
+        return view
     }
 
     public var body: some View {
@@ -75,9 +85,9 @@ public struct CrossmintEmbeddedCheckout: View {
         switch event {
         case .orderUpdated(let update):
             controller?.handle(update)
-            onOrderUpdated?(update)
+            onOrderUpdatedHandler?(update)
         case .orderCreationFailed(let message):
-            onOrderCreationFailed?(message)
+            onOrderCreationFailedHandler?(message)
         case .cryptoRequest(let request):
             guard let reply = request.noPayerReply else { return }
             responder.send(reply)

@@ -10,37 +10,55 @@ import SwiftUI
 /// A view that shows Crossmint's hosted identity verification (KYC) step.
 ///
 /// The view fills the space the layout gives it, and the verification content scrolls inside it.
-/// Use `onReady` to control your own loading indicator.
+/// The Crossmint environment comes from the API key. Attach event handlers with
+/// ``onReady(_:)``, ``onComplete(_:)``, ``onCancel(_:)``, and ``onError(_:)``.
 ///
 /// Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist.
 public struct CrossmintIdentityVerification: View {
     private let apiKey: String
     private let credentials: IdentityVerificationCredentials
     private let locale: CheckoutLocale?
-    private let environment: CheckoutEnvironment
-    private let onReady: (() -> Void)?
-    private let onComplete: ((IdentityVerificationStatus) -> Void)?
-    private let onCancel: (() -> Void)?
-    private let onError: ((IdentityVerificationError) -> Void)?
+    private var onReadyHandler: (() -> Void)?
+    private var onCompleteHandler: ((IdentityVerificationStatus) -> Void)?
+    private var onCancelHandler: (() -> Void)?
+    private var onErrorHandler: ((IdentityVerificationError) -> Void)?
 
     public init(
         apiKey: String,
         credentials: IdentityVerificationCredentials,
-        locale: CheckoutLocale? = nil,
-        environment: CheckoutEnvironment = .staging,
-        onReady: (() -> Void)? = nil,
-        onComplete: ((IdentityVerificationStatus) -> Void)? = nil,
-        onCancel: (() -> Void)? = nil,
-        onError: ((IdentityVerificationError) -> Void)? = nil
+        locale: CheckoutLocale? = nil
     ) {
         self.apiKey = apiKey
         self.credentials = credentials
         self.locale = locale
-        self.environment = environment
-        self.onReady = onReady
-        self.onComplete = onComplete
-        self.onCancel = onCancel
-        self.onError = onError
+    }
+
+    /// Adds an action to perform when the verification UI finishes loading.
+    public func onReady(_ action: @escaping () -> Void) -> Self {
+        var view = self
+        view.onReadyHandler = action
+        return view
+    }
+
+    /// Adds an action to perform when the buyer finishes the verification. The status carries the outcome.
+    public func onComplete(_ action: @escaping (IdentityVerificationStatus) -> Void) -> Self {
+        var view = self
+        view.onCompleteHandler = action
+        return view
+    }
+
+    /// Adds an action to perform when the buyer dismisses the verification flow.
+    public func onCancel(_ action: @escaping () -> Void) -> Self {
+        var view = self
+        view.onCancelHandler = action
+        return view
+    }
+
+    /// Adds an action to perform when the verification fails. `retriable` says whether a new attempt can work.
+    public func onError(_ action: @escaping (IdentityVerificationError) -> Void) -> Self {
+        var view = self
+        view.onErrorHandler = action
+        return view
     }
 
     public var body: some View {
@@ -48,13 +66,13 @@ public struct CrossmintIdentityVerification: View {
         case .success(let url):
             HostedWebView(
                 url: url,
-                navigationPolicy: .crossmintMainFrame(resolvedHost: environment.crossmintHost),
+                navigationPolicy: .crossmintMainFrame(resolvedHost: URL(string: url)?.host ?? ""),
                 allowsMediaCapture: true,
                 isScrollEnabled: true,
                 injectsViewportScript: false,
                 onMessage: { body, _ in handle(body) },
                 onLoadFailure: { message in
-                    onError?(IdentityVerificationError(
+                    onErrorHandler?(IdentityVerificationError(
                         retriable: false,
                         reason: .widgetUnavailable,
                         message: message
@@ -78,13 +96,13 @@ public struct CrossmintIdentityVerification: View {
         guard let event = IdentityVerificationEvent(messageBody: messageBody) else { return }
         switch event {
         case .ready:
-            onReady?()
+            onReadyHandler?()
         case .completed(let status):
-            onComplete?(status)
+            onCompleteHandler?(status)
         case .cancelled:
-            onCancel?()
+            onCancelHandler?()
         case .failed(let error):
-            onError?(error)
+            onErrorHandler?(error)
         }
     }
 
@@ -93,8 +111,8 @@ public struct CrossmintIdentityVerification: View {
     }
 
     func generateVerificationUrl() throws -> String {
-        guard !apiKey.isEmpty else {
-            throw CheckoutError.invalidConfiguration("apiKey is required")
+        guard let environment = CheckoutEnvironment(apiKey: apiKey) else {
+            throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
         }
 
         let baseUrl = "https://\(environment.crossmintHost)/sdk/unstable/identity-verification"

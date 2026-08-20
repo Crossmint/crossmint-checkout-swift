@@ -12,9 +12,8 @@ import Testing
 @MainActor
 @Test func verificationUrlContainsStagingDomain() throws {
     let verification = CrossmintIdentityVerification(
-        apiKey: "ck_test",
-        credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        environment: .staging
+        apiKey: "ck_staging_test",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
     let url = try verification.generateVerificationUrl()
@@ -24,9 +23,8 @@ import Testing
 @MainActor
 @Test func verificationUrlContainsProductionDomain() throws {
     let verification = CrossmintIdentityVerification(
-        apiKey: "ck_test",
-        credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        environment: .production
+        apiKey: "ck_production_test",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
     let url = try verification.generateVerificationUrl()
@@ -36,9 +34,8 @@ import Testing
 @MainActor
 @Test func credentialsParamContainsProviderAndInquiryId() throws {
     let verification = CrossmintIdentityVerification(
-        apiKey: "ck_test",
-        credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        environment: .staging
+        apiKey: "ck_staging_test",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
     let url = try verification.generateVerificationUrl()
@@ -68,10 +65,9 @@ import Testing
 @MainActor
 @Test func localeIncludedWhenSet() throws {
     let verification = CrossmintIdentityVerification(
-        apiKey: "ck_test",
+        apiKey: "ck_staging_test",
         credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        locale: .esES,
-        environment: .staging
+        locale: .esES
     )
 
     let url = try verification.generateVerificationUrl()
@@ -81,9 +77,8 @@ import Testing
 @MainActor
 @Test func localeOmittedByDefault() throws {
     let verification = CrossmintIdentityVerification(
-        apiKey: "ck_test",
-        credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        environment: .staging
+        apiKey: "ck_staging_test",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
     let url = try verification.generateVerificationUrl()
@@ -94,8 +89,7 @@ import Testing
 @Test func verificationUrlContainsApiKeyAndSdkMetadata() throws {
     let verification = CrossmintIdentityVerification(
         apiKey: "ck_staging_abc",
-        credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        environment: .staging
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
     let url = try verification.generateVerificationUrl()
@@ -108,8 +102,7 @@ import Testing
 @Test func verificationEmptyApiKeyThrows() throws {
     let verification = CrossmintIdentityVerification(
         apiKey: "",
-        credentials: IdentityVerificationCredentials(inquiryId: "inq-123"),
-        environment: .staging
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
     #expect(throws: CheckoutError.self) {
@@ -136,10 +129,9 @@ import Testing
 @MainActor
 @Test func verificationUrlIsStableAcrossGenerations() throws {
     let verification = CrossmintIdentityVerification(
-        apiKey: "ck_test",
+        apiKey: "ck_staging_test",
         credentials: IdentityVerificationCredentials(inquiryId: "inq-123", sessionToken: "tok-1"),
-        locale: .enUS,
-        environment: .staging
+        locale: .enUS
     )
     let first = try verification.generateVerificationUrl()
     for _ in 0..<20 {
@@ -150,4 +142,25 @@ import Testing
 @MainActor
 @Test func credentialsIdentityIsTheInquiryId() throws {
     #expect(IdentityVerificationCredentials(inquiryId: "inq-123").id == "inq-123")
+}
+
+@MainActor
+@Test func developmentKeyCollapsesToStaging() throws {
+    let verification = CrossmintIdentityVerification(
+        apiKey: "ck_development_test",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
+    )
+    let url = try verification.generateVerificationUrl()
+    #expect(url.contains("https://staging.crossmint.com/"))
+}
+
+@MainActor
+@Test func malformedApiKeyThrows() throws {
+    let verification = CrossmintIdentityVerification(
+        apiKey: "not-a-crossmint-key",
+        credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
+    )
+    #expect(throws: CheckoutError.self) {
+        try verification.generateVerificationUrl()
+    }
 }
