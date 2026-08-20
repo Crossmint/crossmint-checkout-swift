@@ -108,30 +108,18 @@ public struct CrossmintIdentityVerification: View {
             throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
         }
 
-        let baseUrl = "https://\(environment.crossmintHost)/sdk/unstable/identity-verification"
-        guard var components = URLComponents(string: baseUrl) else {
-            throw CheckoutError.invalidConfiguration("Invalid base URL")
-        }
-
         var queryItems: [URLQueryItem] = []
         queryItems.append(URLQueryItem(name: "credentials", value: try credentials.toJSON()))
         if let locale {
             queryItems.append(URLQueryItem(name: "locale", value: locale.rawValue))
         }
         queryItems.append(URLQueryItem(name: "apiKey", value: apiKey))
+        queryItems.append(try HostedPageURL.sdkMetadataItem())
 
-        let sdkMetadata: [String: String] = [
-            "name": "@crossmint/checkout-swift",
-            "version": SDKVersion.version
-        ]
-        queryItems.append(URLQueryItem(name: "sdkMetadata", value: try sdkMetadata.toJSON()))
-
-        components.queryItems = queryItems
-
-        guard let url = components.url?.absoluteString else {
-            throw CheckoutError.invalidConfiguration("Failed to construct URL")
-        }
-
-        return url
+        return try HostedPageURL.build(
+            host: environment.crossmintHost,
+            path: "/sdk/unstable/identity-verification",
+            queryItems: queryItems
+        )
     }
 }

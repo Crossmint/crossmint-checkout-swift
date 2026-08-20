@@ -8,7 +8,6 @@
 import Foundation
 
 enum NavigationPolicy {
-    case permissive
     case crossmintMainFrame(resolvedHost: String)
 
     func allows(url: URL, isMainFrame: Bool) -> Bool {
@@ -18,8 +17,6 @@ enum NavigationPolicy {
         }
 
         switch self {
-        case .permissive:
-            return true
         case .crossmintMainFrame(let resolvedHost):
             guard isMainFrame else { return true }
             guard scheme == "https" || scheme == "http" else { return false }

@@ -16,18 +16,11 @@ private func url(_ string: String) throws -> URL {
 }
 
 @MainActor
-@Test func blocksUnsafeSchemesInEveryPolicy() throws {
-    for policy in [NavigationPolicy.permissive, IDENTITY_POLICY] {
-        #expect(!policy.allows(url: try url("javascript:alert(1)"), isMainFrame: true))
-        #expect(!policy.allows(url: try url("javascript:alert(1)"), isMainFrame: false))
-        #expect(!policy.allows(url: try url("file:///etc/passwd"), isMainFrame: true))
-        #expect(!policy.allows(url: try url("file:///etc/passwd"), isMainFrame: false))
-    }
-}
-
-@MainActor
-@Test func permissivePolicyAllowsForeignHosts() throws {
-    #expect(NavigationPolicy.permissive.allows(url: try url("https://pay.stripe.com/x"), isMainFrame: true))
+@Test func blocksUnsafeSchemes() throws {
+    #expect(!IDENTITY_POLICY.allows(url: try url("javascript:alert(1)"), isMainFrame: true))
+    #expect(!IDENTITY_POLICY.allows(url: try url("javascript:alert(1)"), isMainFrame: false))
+    #expect(!IDENTITY_POLICY.allows(url: try url("file:///etc/passwd"), isMainFrame: true))
+    #expect(!IDENTITY_POLICY.allows(url: try url("file:///etc/passwd"), isMainFrame: false))
 }
 
 @MainActor
@@ -50,6 +43,14 @@ private func url(_ string: String) throws -> URL {
 @MainActor
 @Test func subFramesAllowedAnywhere() throws {
     #expect(IDENTITY_POLICY.allows(url: try url("https://inquiry.withpersona.com/verify"), isMainFrame: false))
+}
+
+@MainActor
+@Test func checkoutPolicyBlocksForeignMainFramesButAllowsPaymentIframes() throws {
+    let policy = NavigationPolicy.crossmintMainFrame(resolvedHost: "www.crossmint.com")
+    #expect(!policy.allows(url: try url("https://pay.stripe.com/x"), isMainFrame: true))
+    #expect(policy.allows(url: try url("https://pay.stripe.com/x"), isMainFrame: false))
+    #expect(policy.allows(url: try url("https://www.crossmint.com/sdk/2024-03-05/embedded-checkout"), isMainFrame: true))
 }
 
 @MainActor

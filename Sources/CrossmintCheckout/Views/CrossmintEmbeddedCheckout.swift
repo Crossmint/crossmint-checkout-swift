@@ -64,7 +64,7 @@ public struct CrossmintEmbeddedCheckout: View {
         case .success(let url):
             HostedWebView(
                 url: url,
-                navigationPolicy: .permissive,
+                navigationPolicy: .crossmintMainFrame(resolvedHost: environment.crossmintHost),
                 onMessage: handle
             )
         case .failure(let error):
@@ -107,19 +107,7 @@ public struct CrossmintEmbeddedCheckout: View {
             )
         }
 
-        let baseUrl = "https://\(environment.crossmintHost)/sdk/2024-03-05/embedded-checkout"
-
-        guard var components = URLComponents(string: baseUrl) else {
-            throw CheckoutError.invalidConfiguration("Invalid base URL")
-        }
-
-        var queryItems: [URLQueryItem] = []
-
-        let sdkMetadata: [String: String] = [
-            "name": "@crossmint/checkout-swift",
-            "version": SDKVersion.version
-        ]
-        queryItems.append(URLQueryItem(name: "sdkMetadata", value: try sdkMetadata.toJSON()))
+        var queryItems: [URLQueryItem] = [try HostedPageURL.sdkMetadataItem()]
 
         queryItems.append(URLQueryItem(name: "apiKey", value: apiKey))
 
@@ -142,12 +130,10 @@ public struct CrossmintEmbeddedCheckout: View {
             ))
         }
 
-        components.queryItems = queryItems
-
-        guard let url = components.url?.absoluteString else {
-            throw CheckoutError.invalidConfiguration("Failed to construct URL")
-        }
-
-        return url
+        return try HostedPageURL.build(
+            host: environment.crossmintHost,
+            path: "/sdk/2024-03-05/embedded-checkout",
+            queryItems: queryItems
+        )
     }
 }
