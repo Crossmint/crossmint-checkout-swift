@@ -8,22 +8,16 @@
 import Foundation
 
 enum IdentityVerificationEvent {
-    case heightChanged(Double)
     case ready
     case completed(IdentityVerificationStatus)
     case cancelled
     case failed(IdentityVerificationError)
 
     private enum Name: String {
-        case heightChanged = "ui:height.changed"
         case ready = "kyc:ready"
         case completed = "kyc:completed"
         case cancelled = "kyc:cancelled"
         case error = "kyc:error"
-    }
-
-    private struct HeightPayload: Decodable {
-        let height: Double
     }
 
     private struct CompletedPayload: Decodable {
@@ -43,9 +37,6 @@ enum IdentityVerificationEvent {
         else { return nil }
 
         switch event {
-        case .heightChanged:
-            guard let payload = BridgeDecoding.payload(HeightPayload.self, from: message) else { return nil }
-            self = .heightChanged(payload.height)
         case .ready:
             self = .ready
         case .completed:

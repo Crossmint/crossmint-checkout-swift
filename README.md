@@ -168,15 +168,13 @@ struct CheckoutView: View {
             kycCredentials = controller.identityVerificationCredentials
         }
         .sheet(item: $kycCredentials) { credentials in
-            ScrollView {
-                CrossmintIdentityVerification(
-                    apiKey: "ck_production_...",
-                    credentials: credentials,
-                    environment: .production,
-                    onComplete: { status in print("KYC finished: \(status)") },
-                    onError: { error in print("KYC error: \(error.message)") }
-                )
-            }
+            CrossmintIdentityVerification(
+                apiKey: "ck_production_...",
+                credentials: credentials,
+                environment: .production,
+                onComplete: { status in print("KYC finished: \(status)") },
+                onError: { error in print("KYC error: \(error.message)") }
+            )
         }
     }
 }
@@ -199,7 +197,7 @@ Checkout does not wait for a signal from your component. It polls the order unti
 | `onCancel` | `(() -> Void)?` | No | The buyer dismissed the flow |
 | `onError` | `((IdentityVerificationError) -> Void)?` | No | Something failed; `retriable` says whether presenting again can work |
 
-The view renders at zero height until the hosted page reports its size, then tracks it. Use `onReady` to drive your own loading indicator.
+The view fills the space you give it, and the verification content scrolls inside the view. Use `onReady` to drive your own loading indicator.
 
 > **Note:** Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist or the capture step fails.
 

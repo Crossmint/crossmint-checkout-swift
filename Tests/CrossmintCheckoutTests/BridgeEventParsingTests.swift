@@ -9,24 +9,9 @@ import Testing
 @testable import CrossmintCheckout
 
 @MainActor
-@Test func parsesHeightChangedFromIntAndDouble() throws {
-    guard case .heightChanged(let intHeight)? = IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":660}}"#) else {
-        Issue.record("expected heightChanged")
-        return
-    }
-    #expect(intHeight == 660)
-
-    guard case .heightChanged(let doubleHeight)? = IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":660.5}}"#) else {
-        Issue.record("expected heightChanged")
-        return
-    }
-    #expect(doubleHeight == 660.5)
-}
-
-@MainActor
-@Test func ignoresHeightChangedWithoutNumericHeight() throws {
-    #expect(IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{}}"#) == nil)
-    #expect(IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":"tall"}}"#) == nil)
+@Test func ignoresHeightEvents() throws {
+    #expect(IdentityVerificationEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":660}}"#) == nil)
+    #expect(CheckoutEvent(messageBody: #"{"event":"ui:height.changed","data":{"height":660}}"#) == nil)
 }
 
 @MainActor
