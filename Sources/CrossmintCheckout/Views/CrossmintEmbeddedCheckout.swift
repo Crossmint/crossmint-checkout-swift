@@ -15,6 +15,10 @@ public struct CrossmintEmbeddedCheckout: View {
     private let payment: CheckoutPayment?
     private let recipient: CheckoutRecipient?
     private let appearance: CheckoutAppearance?
+    private let identityVerificationHandling: IdentityVerificationHandling?
+    private let controller: CrossmintCheckoutController?
+    private var onOrderUpdatedHandler: ((CheckoutOrderUpdate) -> Void)?
+    private var onOrderCreationFailedHandler: ((String) -> Void)?
     private let environment: CheckoutEnvironment
 
     public init(
@@ -25,6 +29,8 @@ public struct CrossmintEmbeddedCheckout: View {
         payment: CheckoutPayment? = nil,
         recipient: CheckoutRecipient? = nil,
         appearance: CheckoutAppearance? = nil,
+        identityVerificationHandling: IdentityVerificationHandling? = nil,
+        controller: CrossmintCheckoutController? = nil,
         environment: CheckoutEnvironment = .staging
     ) {
         self.apiKey = apiKey
@@ -34,22 +40,50 @@ public struct CrossmintEmbeddedCheckout: View {
         self.payment = payment
         self.recipient = recipient
         self.appearance = appearance
+        self.identityVerificationHandling = identityVerificationHandling
+        self.controller = controller
         self.environment = environment
+    }
+
+    /// Adds an action to perform on every order update from the checkout page.
+    public func onOrderUpdated(_ action: @escaping (CheckoutOrderUpdate) -> Void) -> Self {
+        var view = self
+        view.onOrderUpdatedHandler = action
+        return view
+    }
+
+    /// Adds an action to perform when order creation fails. The message describes the failure.
+    public func onOrderCreationFailed(_ action: @escaping (String) -> Void) -> Self {
+        var view = self
+        view.onOrderCreationFailedHandler = action
+        return view
     }
 
     public var body: some View {
         switch checkoutUrlResult {
         case .success(let url):
-            CheckoutWebView(url: url)
+            HostedWebView(
+                url: url,
+                navigationPolicy: .crossmintMainFrame(resolvedHost: environment.crossmintHost),
+                onMessage: handle
+            )
         case .failure(let error):
-            VStack(spacing: 20) {
-                Text("Error")
-                    .font(.headline)
-                Text(error.localizedDescription)
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
-                    .padding()
-            }
+            CheckoutErrorView(error: error)
+        }
+    }
+
+    @MainActor
+    private func handle(_ messageBody: Any, _ responder: BridgeResponder) {
+        guard let event = CheckoutEvent(messageBody: messageBody) else { return }
+        switch event {
+        case .orderUpdated(let update):
+            controller?.handle(update)
+            onOrderUpdatedHandler?(update)
+        case .orderCreationFailed(let message):
+            onOrderCreationFailedHandler?(message)
+        case .cryptoRequest(let request):
+            guard let reply = request.noPayerReply else { return }
+            responder.send(reply)
         }
     }
 
@@ -73,20 +107,7 @@ public struct CrossmintEmbeddedCheckout: View {
             )
         }
 
-        let domain = environment == .production ? "www" : "staging"
-        let baseUrl = "https://\(domain).crossmint.com/sdk/2024-03-05/embedded-checkout"
-
-        guard var components = URLComponents(string: baseUrl) else {
-            throw CheckoutError.invalidConfiguration("Invalid base URL")
-        }
-
-        var queryItems: [URLQueryItem] = []
-
-        let sdkMetadata: [String: String] = [
-            "name": "@crossmint/checkout-swift",
-            "version": SDKVersion.version
-        ]
-        queryItems.append(URLQueryItem(name: "sdkMetadata", value: try sdkMetadata.toJSON()))
+        var queryItems: [URLQueryItem] = [try HostedPageURL.sdkMetadataItem()]
 
         queryItems.append(URLQueryItem(name: "apiKey", value: apiKey))
 
@@ -102,18 +123,17 @@ public struct CrossmintEmbeddedCheckout: View {
         if let appearance {
             queryItems.append(URLQueryItem(name: "appearance", value: try appearance.toJSON()))
         }
-
-        components.queryItems = queryItems
-
-        guard let url = components.url?.absoluteString else {
-            throw CheckoutError.invalidConfiguration("Failed to construct URL")
+        if let identityVerificationHandling {
+            queryItems.append(URLQueryItem(
+                name: "identityVerificationHandling",
+                value: identityVerificationHandling.rawValue
+            ))
         }
 
-        return url
+        return try HostedPageURL.build(
+            host: environment.crossmintHost,
+            path: "/sdk/2024-03-05/embedded-checkout",
+            queryItems: queryItems
+        )
     }
-}
-
-public enum CheckoutEnvironment: Sendable {
-    case staging
-    case production
 }

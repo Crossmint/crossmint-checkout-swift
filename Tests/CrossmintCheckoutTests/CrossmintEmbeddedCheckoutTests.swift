@@ -141,3 +141,23 @@ import Testing
     #expect(url.contains("GlobalMessage"))
     #expect(url.contains("visible"))
 }
+
+@MainActor
+@Test func identityVerificationHandlingExternalAddsQueryParam() throws {
+    let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_test",
+        identityVerificationHandling: .external,
+        environment: .staging
+    )
+
+    let url = try checkout.generateCheckoutUrl()
+    #expect(url.contains("identityVerificationHandling=external"))
+}
+
+@MainActor
+@Test func identityVerificationHandlingOmittedByDefault() throws {
+    let checkout = CrossmintEmbeddedCheckout(apiKey: "ck_test", environment: .staging)
+
+    let url = try checkout.generateCheckoutUrl()
+    #expect(!url.contains("identityVerificationHandling"))
+}

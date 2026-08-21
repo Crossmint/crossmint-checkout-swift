@@ -67,6 +67,8 @@ struct CheckoutView: View {
 | `environment` | `CheckoutEnvironment` | No | `.staging` (default) or `.production` |
 | `lineItems` | `CheckoutLineItems?` | No | Line item configuration (not yet implemented) |
 | `recipient` | `CheckoutRecipient?` | No | Recipient configuration (not yet implemented) |
+| `identityVerificationHandling` | `IdentityVerificationHandling?` | No | `.external` renders no KYC step inside checkout; you present it yourself (see below) |
+| `controller` | `CrossmintCheckoutController?` | No | Observable order state (order, client secret, KYC credentials) |
 
 ### Payment Configuration
 
@@ -114,6 +116,97 @@ CrossmintEmbeddedCheckout(
 ```
 
 > **Note:** `lineItems` and `recipient` are accepted as parameters but not yet implemented. Passing either will display an error.
+
+## Order Updates
+
+Pass a `CrossmintCheckoutController` to observe the order as the buyer progresses. The controller exposes the latest `order`, the `orderClientSecret`, and derived `identityVerificationCredentials`.
+
+```swift
+struct CheckoutView: View {
+    @StateObject private var controller = CrossmintCheckoutController()
+
+    var body: some View {
+        CrossmintEmbeddedCheckout(
+            apiKey: "ck_production_...",
+            orderId: orderId,
+            clientSecret: clientSecret,
+            controller: controller,
+            environment: .production
+        )
+        .onReceive(controller.$order) { order in
+            print("Order phase: \(String(describing: order?.phase))")
+        }
+    }
+}
+```
+
+Order events are also available as chained methods: `.onOrderUpdated { update in }` and `.onOrderCreationFailed { message in }`.
+
+Reusing a controller across checkout sessions requires calling `clear()` first.
+
+## Identity Verification (KYC)
+
+Some orders require identity verification before payment. By default checkout renders that step inline and you do nothing.
+
+To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: the credentials appear when the order needs verification, and they go away when the backend confirms it.
+
+```swift
+struct CheckoutView: View {
+    @StateObject private var controller = CrossmintCheckoutController()
+    @State private var kycCredentials: IdentityVerificationCredentials?
+
+    var body: some View {
+        CrossmintEmbeddedCheckout(
+            apiKey: "ck_production_...",
+            orderId: orderId,
+            clientSecret: clientSecret,
+            identityVerificationHandling: .external,
+            controller: controller,
+            environment: .production
+        )
+        .onReceive(controller.$order) { order in
+            kycCredentials = order?.identityVerificationCredentials
+        }
+        .sheet(item: $kycCredentials) { credentials in
+            CrossmintIdentityVerification(
+                apiKey: "ck_production_...",
+                credentials: credentials
+            )
+            .onComplete { status in print("KYC finished: \(status)") }
+            .onError { error in print("KYC error: \(error.message)") }
+        }
+    }
+}
+```
+
+Checkout does not wait for a signal from your component. It polls the order until the backend confirms the verification, then continues on its own.
+
+`CrossmintIdentityVerification` can also be used standalone, without embedded checkout, if you obtain the credentials from your backend's order response (`payment.preparation.kyc`).
+
+### CrossmintIdentityVerification Properties
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `String` | Yes | Your client-side API key (`ck_...`) |
+| `credentials` | `IdentityVerificationCredentials` | Yes | From the controller or your backend's order response |
+| `locale` | `CheckoutLocale?` | No | UI language of the verification flow |
+
+### Event handlers
+
+Attach handlers with chained methods, all optional:
+
+- `.onReady { }` — the verification UI finished loading
+- `.onComplete { status in }` — the buyer finished; the status carries the outcome
+- `.onCancel { }` — the buyer dismissed the flow
+- `.onError { error in }` — something failed; `retriable` says whether showing the view again can work
+
+The Crossmint environment comes from the API key prefix (`ck_staging_...`, `ck_production_...`).
+
+The view fills the space you give it, and the verification content scrolls inside the view. Use `onReady` to drive your own loading indicator.
+
+> **Note:** Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist or the capture step fails.
+
+> **Note:** `identityVerificationHandling` requires a current Crossmint deployment. Older deployments ignore the flag and render the verification step inline as well.
 
 ## Example App
 

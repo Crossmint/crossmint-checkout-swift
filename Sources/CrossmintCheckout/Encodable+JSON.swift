@@ -10,7 +10,7 @@ import Foundation
 extension Encodable {
     func toJSON() throws -> String {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.withoutEscapingSlashes]
+        encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
         let data = try encoder.encode(self)
 
         guard let json = String(data: data, encoding: .utf8) else {

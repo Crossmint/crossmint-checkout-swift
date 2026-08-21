@@ -9,6 +9,9 @@ import SwiftUI
 import CrossmintCheckout
 
 struct ContentView: View {
+    @StateObject private var controller = CrossmintCheckoutController()
+    @State private var kycCredentials: IdentityVerificationCredentials?
+
     var body: some View {
         CrossmintEmbeddedCheckout(
             apiKey: "ck_production_...",
@@ -31,7 +34,20 @@ struct ContentView: View {
                     receiptEmailInput: CheckoutReceiptEmailInputRule(display: "hidden")
                 )
             ),
+            identityVerificationHandling: .external,
+            controller: controller,
             environment: .staging
         )
+        .onReceive(controller.$order) { order in
+            kycCredentials = order?.identityVerificationCredentials
+        }
+        .sheet(item: $kycCredentials) { credentials in
+            CrossmintIdentityVerification(
+                apiKey: "ck_production_...",
+                credentials: credentials
+            )
+            .onComplete { status in print("Identity verification finished: \(status)") }
+            .onError { error in print("Identity verification error: \(error.message)") }
+        }
     }
 }
