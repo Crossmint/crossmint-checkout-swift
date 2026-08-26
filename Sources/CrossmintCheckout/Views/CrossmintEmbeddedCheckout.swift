@@ -7,6 +7,23 @@
 
 import SwiftUI
 
+/// A view that shows Crossmint's hosted checkout for an order.
+///
+/// Create the order from your backend with the Crossmint Orders API, then pass the
+/// `orderId` and `clientSecret` it returns. The checkout page collects the payment and
+/// takes the buyer through the steps the order needs, identity verification included.
+///
+/// ```swift
+/// CrossmintEmbeddedCheckout(
+///     apiKey: apiKey,
+///     orderId: orderId,
+///     clientSecret: clientSecret
+/// )
+/// ```
+///
+/// Pass a ``CrossmintCheckoutController`` to observe the order as the buyer progresses,
+/// or attach ``onOrderUpdated(_:)`` and ``onOrderCreationFailed(_:)`` to handle the
+/// events yourself.
 public struct CrossmintEmbeddedCheckout: View {
     private let apiKey: String
     private let orderId: String?
@@ -19,7 +36,7 @@ public struct CrossmintEmbeddedCheckout: View {
     private let controller: CrossmintCheckoutController?
     private var onOrderUpdatedHandler: ((CheckoutOrderUpdate) -> Void)?
     private var onOrderCreationFailedHandler: ((String) -> Void)?
-    private let environment: CheckoutEnvironment
+    private let explicitEnvironment: CheckoutEnvironment?
 
     public init(
         apiKey: String,
@@ -30,8 +47,63 @@ public struct CrossmintEmbeddedCheckout: View {
         recipient: CheckoutRecipient? = nil,
         appearance: CheckoutAppearance? = nil,
         identityVerificationHandling: IdentityVerificationHandling? = nil,
+        controller: CrossmintCheckoutController? = nil
+    ) {
+        self.init(
+            apiKey: apiKey,
+            orderId: orderId,
+            clientSecret: clientSecret,
+            lineItems: lineItems,
+            payment: payment,
+            recipient: recipient,
+            appearance: appearance,
+            identityVerificationHandling: identityVerificationHandling,
+            controller: controller,
+            explicitEnvironment: nil
+        )
+    }
+
+    @available(
+        *, deprecated,
+        message: "The environment comes from the API key. Remove the environment parameter."
+    )
+    public init(
+        apiKey: String,
+        orderId: String? = nil,
+        clientSecret: String? = nil,
+        lineItems: CheckoutLineItems? = nil,
+        payment: CheckoutPayment? = nil,
+        recipient: CheckoutRecipient? = nil,
+        appearance: CheckoutAppearance? = nil,
+        identityVerificationHandling: IdentityVerificationHandling? = nil,
         controller: CrossmintCheckoutController? = nil,
-        environment: CheckoutEnvironment = .staging
+        environment: CheckoutEnvironment
+    ) {
+        self.init(
+            apiKey: apiKey,
+            orderId: orderId,
+            clientSecret: clientSecret,
+            lineItems: lineItems,
+            payment: payment,
+            recipient: recipient,
+            appearance: appearance,
+            identityVerificationHandling: identityVerificationHandling,
+            controller: controller,
+            explicitEnvironment: environment
+        )
+    }
+
+    private init(
+        apiKey: String,
+        orderId: String?,
+        clientSecret: String?,
+        lineItems: CheckoutLineItems?,
+        payment: CheckoutPayment?,
+        recipient: CheckoutRecipient?,
+        appearance: CheckoutAppearance?,
+        identityVerificationHandling: IdentityVerificationHandling?,
+        controller: CrossmintCheckoutController?,
+        explicitEnvironment: CheckoutEnvironment?
     ) {
         self.apiKey = apiKey
         self.orderId = orderId
@@ -42,7 +114,7 @@ public struct CrossmintEmbeddedCheckout: View {
         self.appearance = appearance
         self.identityVerificationHandling = identityVerificationHandling
         self.controller = controller
-        self.environment = environment
+        self.explicitEnvironment = explicitEnvironment
     }
 
     /// Adds an action to perform on every order update from the checkout page.
@@ -64,7 +136,7 @@ public struct CrossmintEmbeddedCheckout: View {
         case .success(let url):
             HostedWebView(
                 url: url,
-                navigationPolicy: .crossmintMainFrame(resolvedHost: environment.crossmintHost),
+                navigationPolicy: .crossmintMainFrame(resolvedHost: URL(string: url)?.host ?? ""),
                 onMessage: handle
             )
         case .failure(let error):
@@ -107,6 +179,8 @@ public struct CrossmintEmbeddedCheckout: View {
             )
         }
 
+        let environment = try resolvedEnvironment()
+
         var queryItems: [URLQueryItem] = [try HostedPageURL.sdkMetadataItem()]
 
         queryItems.append(URLQueryItem(name: "apiKey", value: apiKey))
@@ -135,5 +209,15 @@ public struct CrossmintEmbeddedCheckout: View {
             path: "/sdk/2024-03-05/embedded-checkout",
             queryItems: queryItems
         )
+    }
+
+    private func resolvedEnvironment() throws -> CheckoutEnvironment {
+        if let explicitEnvironment {
+            return explicitEnvironment
+        }
+        guard let environment = CheckoutEnvironment(apiKey: apiKey) else {
+            throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
+        }
+        return environment
     }
 }

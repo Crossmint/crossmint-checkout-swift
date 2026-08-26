@@ -35,8 +35,7 @@ struct ContentView: View {
                 )
             ),
             identityVerificationHandling: .external,
-            controller: controller,
-            environment: .staging
+            controller: controller
         )
         .onReceive(controller.$order) { order in
             kycCredentials = order?.identityVerificationCredentials

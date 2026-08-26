@@ -48,8 +48,7 @@ struct CheckoutView: View {
         CrossmintEmbeddedCheckout(
             apiKey: "ck_production_...",
             orderId: orderId,
-            clientSecret: clientSecret,
-            environment: .production
+            clientSecret: clientSecret
         )
     }
 }
@@ -64,7 +63,6 @@ struct CheckoutView: View {
 | `clientSecret` | `String?` | Yes* | The client secret returned by the Orders API |
 | `payment` | `CheckoutPayment?` | No | Payment configuration (fiat/crypto, allowed methods) |
 | `appearance` | `CheckoutAppearance?` | No | UI customization (colors, fonts, border radius) |
-| `environment` | `CheckoutEnvironment` | No | `.staging` (default) or `.production` |
 | `lineItems` | `CheckoutLineItems?` | No | Line item configuration (not yet implemented) |
 | `recipient` | `CheckoutRecipient?` | No | Recipient configuration (not yet implemented) |
 | `identityVerificationHandling` | `IdentityVerificationHandling?` | No | `.external` renders no KYC step inside checkout; you present it yourself (see below) |
@@ -85,8 +83,7 @@ CrossmintEmbeddedCheckout(
             allowedMethods: CheckoutAllowedMethods(applePay: true, card: true)
         ),
         defaultMethod: .fiat
-    ),
-    environment: .production
+    )
 )
 ```
 
@@ -110,8 +107,7 @@ CrossmintEmbeddedCheckout(
                 colors: CheckoutColorStyle(background: "#6C5CE7", text: "#FFFFFF")
             )
         )
-    ),
-    environment: .production
+    )
 )
 ```
 
@@ -130,8 +126,7 @@ struct CheckoutView: View {
             apiKey: "ck_production_...",
             orderId: orderId,
             clientSecret: clientSecret,
-            controller: controller,
-            environment: .production
+            controller: controller
         )
         .onReceive(controller.$order) { order in
             print("Order phase: \(String(describing: order?.phase))")
@@ -161,8 +156,7 @@ struct CheckoutView: View {
             orderId: orderId,
             clientSecret: clientSecret,
             identityVerificationHandling: .external,
-            controller: controller,
-            environment: .production
+            controller: controller
         )
         .onReceive(controller.$order) { order in
             kycCredentials = order?.identityVerificationCredentials
@@ -199,8 +193,6 @@ Attach handlers with chained methods, all optional:
 - `.onComplete { status in }` — the buyer finished; the status carries the outcome
 - `.onCancel { }` — the buyer dismissed the flow
 - `.onError { error in }` — something failed; `retriable` says whether showing the view again can work
-
-The Crossmint environment comes from the API key prefix (`ck_staging_...`, `ck_production_...`).
 
 The view fills the space you give it, and the verification content scrolls inside the view. Use `onReady` to drive your own loading indicator.
 
