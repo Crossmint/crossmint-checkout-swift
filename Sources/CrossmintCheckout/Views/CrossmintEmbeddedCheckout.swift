@@ -7,12 +7,23 @@
 
 import SwiftUI
 
-/// A view that shows Crossmint's hosted checkout.
+/// A view that shows Crossmint's hosted checkout for an order.
 ///
-/// The Crossmint environment comes from the API key.
+/// Create the order from your backend with the Crossmint Orders API, then pass the
+/// `orderId` and `clientSecret` it returns. The checkout page collects the payment and
+/// takes the buyer through the steps the order needs, identity verification included.
 ///
-/// Attach event handlers with ``onOrderUpdated(_:)`` and ``onOrderCreationFailed(_:)``.
-/// To observe the order, pass a ``CrossmintCheckoutController``.
+/// ```swift
+/// CrossmintEmbeddedCheckout(
+///     apiKey: apiKey,
+///     orderId: orderId,
+///     clientSecret: clientSecret
+/// )
+/// ```
+///
+/// Pass a ``CrossmintCheckoutController`` to observe the order as the buyer progresses,
+/// or attach ``onOrderUpdated(_:)`` and ``onOrderCreationFailed(_:)`` to handle the
+/// events yourself.
 public struct CrossmintEmbeddedCheckout: View {
     private let apiKey: String
     private let orderId: String?
