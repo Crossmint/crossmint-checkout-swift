@@ -56,7 +56,7 @@ jobs:
     - name: Run tests
       timeout-minutes: 15
       run: |
-        xcodebuild -scheme CrossmintCheckout -destination "$SIMULATOR_DEST" test
+        xcodebuild -scheme crossmint-checkout-swift -destination "$SIMULATOR_DEST" test
 
     - name: Build demo app
       timeout-minutes: 15
