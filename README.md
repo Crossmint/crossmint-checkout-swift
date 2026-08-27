@@ -96,9 +96,11 @@ CrossmintEmbeddedCheckout(
     clientSecret: clientSecret,
     appearance: CheckoutAppearance(
         variables: CheckoutAppearanceVariables(
-            colors: CheckoutColorStyle(
-                background: "#FFFFFF",
-                text: "#000000"
+            colors: CheckoutVariablesColorStyle(
+                textPrimary: "#000000",
+                textSecondary: "#606060",
+                backgroundPrimary: "#FFFFFF",
+                borderPrimary: "#E0E0E0"
             )
         ),
         rules: CheckoutAppearanceRules(

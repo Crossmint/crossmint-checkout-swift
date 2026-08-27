@@ -198,10 +198,41 @@ public struct CheckoutAppearanceRules: Codable, Sendable {
 
 // MARK: - Appearance Variables
 
-public struct CheckoutAppearanceVariables: Codable, Sendable {
-    public let colors: CheckoutColorStyle?
+/// Global color variables. These use different keys than the per-element `CheckoutColorStyle`
+/// used in rules: the checkout reads `textPrimary`/`textSecondary`/`borderPrimary`/etc. at the
+/// variables level.
+public struct CheckoutVariablesColorStyle: Codable, Sendable {
+    public let textPrimary: String?
+    public let textSecondary: String?
+    public let backgroundPrimary: String?
+    public let borderPrimary: String?
+    public let danger: String?
+    public let warning: String?
+    public let accent: String?
 
-    public init(colors: CheckoutColorStyle? = nil) {
+    public init(
+        textPrimary: String? = nil,
+        textSecondary: String? = nil,
+        backgroundPrimary: String? = nil,
+        borderPrimary: String? = nil,
+        danger: String? = nil,
+        warning: String? = nil,
+        accent: String? = nil
+    ) {
+        self.textPrimary = textPrimary
+        self.textSecondary = textSecondary
+        self.backgroundPrimary = backgroundPrimary
+        self.borderPrimary = borderPrimary
+        self.danger = danger
+        self.warning = warning
+        self.accent = accent
+    }
+}
+
+public struct CheckoutAppearanceVariables: Codable, Sendable {
+    public let colors: CheckoutVariablesColorStyle?
+
+    public init(colors: CheckoutVariablesColorStyle? = nil) {
         self.colors = colors
     }
 }
