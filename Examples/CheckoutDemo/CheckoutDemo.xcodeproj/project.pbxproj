@@ -12,6 +12,8 @@
 
 /* Begin PBXFileReference section */
 		3B0C43F82F4FBB5E00869D9A /* CheckoutDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CheckoutDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BA1000000000000000000A1 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = Config/Base.xcconfig; sourceTree = "<group>"; };
+		3BA1000000000000000000AB /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.example.xcconfig; path = Config/Secrets.example.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -38,6 +40,7 @@
 			isa = PBXGroup;
 			children = (
 				3B0C43FA2F4FBB5E00869D9A /* CheckoutDemo */,
+				3BA1000000000000000000A2 /* Config */,
 				3BC06E772F4FC15A00FE4175 /* Frameworks */,
 				3B0C43F92F4FBB5E00869D9A /* Products */,
 			);
@@ -49,6 +52,15 @@
 				3B0C43F82F4FBB5E00869D9A /* CheckoutDemo.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3BA1000000000000000000A2 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				3BA1000000000000000000A1 /* Base.xcconfig */,
+				3BA1000000000000000000AB /* Secrets.example.xcconfig */,
+			);
+			name = Config;
 			sourceTree = "<group>";
 		};
 		3BC06E772F4FC15A00FE4175 /* Frameworks */ = {
@@ -265,6 +277,7 @@
 		};
 		3B0C44042F4FBB5F00869D9A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3BA1000000000000000000A1 /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -273,6 +286,7 @@
 				DEVELOPMENT_TEAM = J3LD2GHHR8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is used for identity verification document capture.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -298,6 +312,7 @@
 		};
 		3B0C44052F4FBB5F00869D9A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3BA1000000000000000000A1 /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -306,6 +321,7 @@
 				DEVELOPMENT_TEAM = J3LD2GHHR8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is used for identity verification document capture.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
