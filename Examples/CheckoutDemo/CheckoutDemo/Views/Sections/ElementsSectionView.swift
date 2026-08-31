@@ -21,8 +21,10 @@ struct ElementsSectionView: View {
                     .accessibilityIdentifier("hide-receipt-email-toggle")
                 Toggle("Hide global message", isOn: $store.options.hideGlobalMessage)
                     .accessibilityIdentifier("hide-global-message-toggle")
+            } header: {
+                Text("Field visibility")
             } footer: {
-                Text("Hiding an input means the order has to supply that value already, so expect an error if it does not.")
+                Text("When you hide an input, the order must already supply that value. If it does not, the checkout shows an error.")
             }
         }
     }

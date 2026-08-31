@@ -17,13 +17,26 @@ struct SidebarView: View {
                     row(for: section)
                 }
             }
-            Section("Run") {
+            Section("Components") {
+                ForEach(SidebarSection.components) { section in
+                    row(for: section)
+                }
+            }
+            Section("Diagnostics") {
                 ForEach(SidebarSection.diagnostics) { section in
                     row(for: section)
                 }
             }
         }
         .navigationTitle("Playground")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Label("Playground", image: "crossmint-icon")
+                    .labelStyle(.titleAndIcon)
+                    .font(.headline)
+            }
+        }
         .accessibilityIdentifier("sidebar-list")
     }
 

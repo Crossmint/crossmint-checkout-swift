@@ -36,12 +36,12 @@ struct OrderSectionView: View {
                     ForEach(TokenPreset.all) { preset in
                         Text(preset.name).tag(preset.id)
                     }
-                    Text("Custom locator").tag("custom")
+                    Text("Custom token").tag("custom")
                 }
                 .accessibilityIdentifier("token-picker")
 
                 if store.draft.preset == nil {
-                    TextField("chain:contractAddress", text: $store.draft.customTokenLocator)
+                    TextField("chain:token-address", text: $store.draft.customTokenLocator)
                         .font(.callout.monospaced())
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -55,9 +55,9 @@ struct OrderSectionView: View {
                         .accessibilityIdentifier("amount-input")
                 }
             } header: {
-                Text("Line item")
+                Text("Item")
             } footer: {
-                Text("Every preset is a testnet token, so a run cannot move real funds. Execution mode is exact-in.")
+                Text("Each preset is a testnet token, so an order here cannot move real funds.")
             }
 
             Section("Pay with") {
@@ -103,7 +103,7 @@ struct OrderSectionView: View {
                     Task { await store.createOrder() }
                 } label: {
                     HStack {
-                        Text(store.session == nil ? "Create order" : "Replace with a new order")
+                        Text(store.session == nil ? "Create order" : "Recreate order")
                         Spacer()
                         if store.isCreatingOrder { ProgressView() }
                     }
@@ -111,7 +111,7 @@ struct OrderSectionView: View {
                 .disabled(store.draft.validationMessage != nil || store.isCreatingOrder)
                 .accessibilityIdentifier("create-order-button")
             } footer: {
-                Text("The demo calls the Orders API from the device so you can test without a backend. Your own app should create orders server-side.")
+                Text("This demo calls the Orders API from the device, so you can try the checkout without a backend. In production, create orders on your server.")
             }
 
             Section {
@@ -131,7 +131,7 @@ struct OrderSectionView: View {
                     .disabled(!store.canPasteOrder)
                     .accessibilityIdentifier("use-pasted-order-button")
             } header: {
-                Text("Or paste an order from your backend")
+                Text("Paste an order from your backend")
             }
         }
         .alert(

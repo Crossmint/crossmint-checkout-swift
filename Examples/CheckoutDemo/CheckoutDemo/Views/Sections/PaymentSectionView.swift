@@ -20,7 +20,7 @@ struct PaymentSectionView: View {
                 Toggle("Crypto", isOn: $store.options.cryptoEnabled)
                     .accessibilityIdentifier("crypto-enabled-toggle")
             } footer: {
-                Text("Turning both off leaves the buyer no way to pay, which is worth seeing at least once.")
+                Text("The buyer needs at least one of these methods.")
             }
 
             Section("Allowed fiat methods") {
@@ -42,7 +42,7 @@ struct PaymentSectionView: View {
             } header: {
                 Text("Identity verification")
             } footer: {
-                Text("On, the app presents CrossmintIdentityVerification itself. Off, the checkout page shows the step inline.")
+                Text("The app presents CrossmintIdentityVerification instead of the step inside the checkout.")
             }
         }
     }

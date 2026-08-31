@@ -33,6 +33,10 @@ final class DemoStore {
     var pastedOrderId = ""
     var pastedClientSecret = ""
 
+    var identityInquiryId = ""
+    var identitySessionToken = ""
+    var identityLocale: CheckoutLocale?
+
     private let api: OrdersAPI?
 
     init() {
@@ -55,6 +59,22 @@ final class DemoStore {
 
     var identityVerificationCredentials: IdentityVerificationCredentials? {
         latestOrder?.identityVerificationCredentials
+    }
+
+    var manualIdentityCredentials: IdentityVerificationCredentials? {
+        let inquiry = identityInquiryId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !inquiry.isEmpty else { return nil }
+        let token = identitySessionToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        return IdentityVerificationCredentials(
+            inquiryId: inquiry,
+            sessionToken: token.isEmpty ? nil : token
+        )
+    }
+
+    func adoptOrderIdentityCredentials() {
+        guard let credentials = identityVerificationCredentials else { return }
+        identityInquiryId = credentials.inquiryId
+        identitySessionToken = credentials.sessionToken ?? ""
     }
 
     var canPasteOrder: Bool {
@@ -127,13 +147,21 @@ final class DemoStore {
         )
 
         if order.identityVerificationCredentials != nil {
-            log(.identity, "Identity verification required", "The order waits on KYC.")
+            log(.identity, "Identity verification required", "The order returned verification credentials.")
         }
     }
 
     func handleOrderCreationFailure(_ message: String) {
         orderErrorMessage = message
         log(.failure, "Checkout reported a failure", message)
+    }
+
+    func handleIdentityVerificationReady() {
+        log(.identity, "Identity verification ready", nil)
+    }
+
+    func handleIdentityVerificationCancelled() {
+        log(.identity, "Identity verification cancelled", nil)
     }
 
     func handleIdentityVerification(status: IdentityVerificationStatus) {

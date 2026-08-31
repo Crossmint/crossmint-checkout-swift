@@ -54,10 +54,10 @@ nonisolated struct OrderDraft: Equatable {
             return "Enter the wallet address that receives the token."
         }
         if method == .crypto, payerAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "A crypto payment needs the address that pays."
+            return "Enter the address that pays."
         }
         if receiptEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "The Orders API requires a receipt email."
+            return "Enter a receipt email."
         }
         return nil
     }

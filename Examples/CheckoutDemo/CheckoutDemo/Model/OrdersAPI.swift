@@ -69,7 +69,7 @@ nonisolated struct OrdersAPI: Sendable {
         guard let clientSecret = json["clientSecret"] as? String,
               let order = json["order"] as? [String: Any],
               let orderId = order["orderId"] as? String else {
-            throw APIError(message: "The Orders API response had no orderId and clientSecret.")
+            throw APIError(message: "The Orders API response had no orderId or clientSecret.")
         }
 
         return OrderSession(orderId: orderId, clientSecret: clientSecret, source: .createdInApp)

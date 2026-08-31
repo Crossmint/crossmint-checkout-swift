@@ -12,6 +12,7 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
     case payment
     case appearance
     case elements
+    case identity
     case events
     case settings
 
@@ -23,19 +24,9 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
         case .payment: "Payment"
         case .appearance: "Appearance"
         case .elements: "Elements"
+        case .identity: "Identity"
         case .events: "Events"
         case .settings: "Settings"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .order: "What you're selling and its parameters"
-        case .payment: "Accepted methods and currencies"
-        case .appearance: "Colors and corner radius"
-        case .elements: "Which fields the checkout shows"
-        case .events: "What the SDK reported"
-        case .settings: "Environment and API key"
         }
     }
 
@@ -45,11 +36,13 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
         case .payment: "creditcard"
         case .appearance: "paintbrush"
         case .elements: "slider.horizontal.3"
+        case .identity: "person.text.rectangle"
         case .events: "list.bullet.rectangle"
         case .settings: "gearshape"
         }
     }
 
     static let configuration: [SidebarSection] = [.order, .payment, .appearance, .elements]
+    static let components: [SidebarSection] = [.identity]
     static let diagnostics: [SidebarSection] = [.events, .settings]
 }

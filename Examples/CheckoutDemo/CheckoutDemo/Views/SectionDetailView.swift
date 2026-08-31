@@ -22,20 +22,21 @@ struct SectionDetailView: View {
             case .payment: PaymentSectionView()
             case .appearance: AppearanceSectionView()
             case .elements: ElementsSectionView()
+            case .identity: IdentitySectionView(apiKey: apiKey)
             case .events: EventLogView()
             case .settings: SettingsSectionView()
             case nil:
                 ContentUnavailableView(
-                    "Pick a section",
+                    "No section selected",
                     systemImage: "sidebar.left",
-                    description: Text("Choose what to configure from the sidebar.")
+                    description: Text("Select a section in the sidebar to configure the checkout.")
                 )
             }
         }
         .navigationTitle(section?.title ?? "Playground")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if showsCheckoutButton, section != .events, section != .settings {
+            if showsCheckoutButton, SidebarSection.configuration.contains(where: { $0 == section }) {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Checkout", systemImage: "creditcard") {
                         isShowingCheckout = true

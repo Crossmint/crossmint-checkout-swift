@@ -16,7 +16,7 @@ struct EventLogView: View {
                 ContentUnavailableView(
                     "No events yet",
                     systemImage: "list.bullet.rectangle",
-                    description: Text("Start a checkout and the SDK's order updates land here.")
+                    description: Text("Start a checkout. The SDK reports order updates here.")
                 )
             } else {
                 List(store.events) { event in

@@ -13,23 +13,23 @@ struct SettingsSectionView: View {
             Section("Environment") {
                 LabeledContent("Host", value: DemoConfiguration.environment?.host ?? "unknown")
                     .accessibilityIdentifier("environment-host-label")
-                LabeledContent("Key", value: maskedKey)
+                LabeledContent("Client API key", value: maskedKey)
                     .font(.callout.monospaced())
             }
 
             Section {
-                Text(setupCommand)
+                Text(secretsPath)
                     .font(.footnote.monospaced())
                     .textSelection(.enabled)
             } header: {
                 Text("Changing the key")
             } footer: {
-                Text("Edit Config/Secrets.xcconfig and build again. It is gitignored, and the environment comes from the key prefix.")
+                Text("Edit this file and build again. The key prefix sets the environment. Git ignores this file.")
             }
         }
     }
 
-    private let setupCommand = "Examples/CheckoutDemo/Config/Secrets.xcconfig"
+    private let secretsPath = "Examples/CheckoutDemo/Config/Secrets.xcconfig"
 
     private var maskedKey: String {
         guard let key = DemoConfiguration.apiKey else { return "not set" }

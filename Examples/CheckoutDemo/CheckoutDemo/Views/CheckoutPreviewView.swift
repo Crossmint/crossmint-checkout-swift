@@ -27,7 +27,7 @@ struct CheckoutPreviewView: View {
                 ContentUnavailableView(
                     "No order yet",
                     systemImage: "creditcard",
-                    description: Text("Create an order in the Order section and the checkout renders here.")
+                    description: Text("Create an order in the Order section. The checkout appears here.")
                 )
             }
         }
@@ -54,7 +54,7 @@ struct CheckoutPreviewView: View {
             identityCredentials = credentials
         }
         .sheet(item: $identityCredentials) { credentials in
-            IdentityVerificationSheet(apiKey: apiKey, credentials: credentials)
+            IdentityVerificationSheet(apiKey: apiKey, credentials: credentials).environment(store)
         }
     }
 

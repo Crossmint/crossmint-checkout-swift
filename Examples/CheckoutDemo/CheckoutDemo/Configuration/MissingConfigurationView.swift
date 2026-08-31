@@ -25,7 +25,7 @@ struct MissingConfigurationView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.quaternary, in: .rect(cornerRadius: 8))
 
-                Text("Run that from Examples/CheckoutDemo, put your ck_staging_ key in the new file, then build again. Secrets.xcconfig is gitignored.")
+                Text("Run this command from Examples/CheckoutDemo. Add your ck_staging_ key to the new file, then build again. Git ignores Secrets.xcconfig.")
             }
             .padding(.top, 4)
         }
