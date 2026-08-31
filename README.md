@@ -204,7 +204,48 @@ The view fills the space you give it, and the verification content scrolls insid
 
 ## Example App
 
-See a full working example at [crossmint-swift-checkout-demo](https://github.com/Crossmint/crossmint-swift-checkout-demo).
+`Examples/CheckoutDemo` is a playground for exercising the SDK, modelled on the web
+[embedded checkout playground](https://github.com/Crossmint/embedded-checkout-playground).
+It is a universal app: on iPad the sidebar, the section you are configuring, and a live
+checkout sit side by side, so a change to payment methods or appearance shows up in the
+checkout immediately. On iPhone the same sections stack, and a toolbar button opens the
+checkout.
+
+### Setup
+
+```
+cd Examples/CheckoutDemo
+cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig
+```
+
+Put your Crossmint client key in that file:
+
+```
+CROSSMINT_API_KEY = ck_staging_...
+```
+
+`Secrets.xcconfig` is gitignored, and the build reads it through an optional include, so
+the project still compiles without one. Open `CheckoutDemo.xcodeproj` and run. The
+environment comes from the key prefix: `ck_staging_` talks to staging, `ck_production_`
+talks to production.
+
+### Sections
+
+- **Order** — create an order from testnet token presets or a custom token locator, or
+  paste an `orderId` and `clientSecret` from your own backend
+- **Payment** — fiat and crypto, the allowed fiat methods, and whether the app or the
+  checkout page handles identity verification
+- **Appearance** — the seven `appearance.variables` colors and a corner radius applied
+  to inputs, tabs and the primary button
+- **Elements** — which fields the checkout renders
+- **Events** — a log of `onOrderUpdated`, `onOrderCreationFailed` and the identity
+  verification callbacks, so a bug report can carry an order ID and a phase
+- **Settings** — the environment and key the run is using
+
+Every control has an accessibility identifier, so the app can be driven from UI tests.
+
+The app calls the Orders API directly so that testing needs no backend. Your own app
+should create orders server-side, where a server key can stay secret.
 
 ## Documentation
 
