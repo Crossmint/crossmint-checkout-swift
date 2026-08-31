@@ -10,6 +10,7 @@ import SwiftUI
 struct PlaygroundView: View {
     let apiKey: String
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var store = DemoStore()
 
     var body: some View {
@@ -18,7 +19,11 @@ struct PlaygroundView: View {
         NavigationSplitView {
             SidebarView(selection: $store.selection)
         } content: {
-            SectionDetailView(section: store.selection, apiKey: apiKey)
+            SectionDetailView(
+                section: store.selection,
+                apiKey: apiKey,
+                showsCheckoutButton: horizontalSizeClass == .compact
+            )
         } detail: {
             CheckoutPreviewView(apiKey: apiKey)
         }
