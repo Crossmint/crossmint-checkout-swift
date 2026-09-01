@@ -22,7 +22,8 @@ nonisolated struct OrderDraft: Equatable {
         }
     }
 
-    var tokenPresetID: String = TokenPreset.baseSepoliaUSDC.id
+    var tokenSymbol: String = TokenPreset.usdc.symbol
+    var networkLocator: String = TokenPreset.usdc.networks[0].locator
     var customTokenLocator: String = ""
     var amount: Decimal = 10
     var method: Method = .card
@@ -31,11 +32,16 @@ nonisolated struct OrderDraft: Equatable {
     var receiptEmail: String = ""
 
     var preset: TokenPreset? {
-        TokenPreset.all.first { $0.id == tokenPresetID }
+        TokenPreset.all.first { $0.symbol == tokenSymbol }
+    }
+
+    var network: TokenPreset.Network? {
+        guard let preset else { return nil }
+        return preset.networks.first { $0.locator == networkLocator } ?? preset.networks.first
     }
 
     var tokenLocator: String {
-        preset?.locator ?? customTokenLocator.trimmingCharacters(in: .whitespacesAndNewlines)
+        network?.locator ?? customTokenLocator.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var amountString: String {
@@ -43,7 +49,7 @@ nonisolated struct OrderDraft: Equatable {
     }
 
     var chain: String {
-        preset?.chain ?? String(tokenLocator.prefix(while: { $0 != ":" }))
+        network?.chainID ?? String(tokenLocator.prefix(while: { $0 != ":" }))
     }
 
     var validationMessage: String? {

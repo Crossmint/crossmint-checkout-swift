@@ -32,13 +32,22 @@ struct OrderSectionView: View {
             }
 
             Section {
-                Picker("Token", selection: $store.draft.tokenPresetID) {
+                Picker("Token", selection: $store.draft.tokenSymbol) {
                     ForEach(TokenPreset.all) { preset in
-                        Text(preset.name).tag(preset.id)
+                        Text(preset.symbol).tag(preset.symbol)
                     }
-                    Text("Custom token").tag("custom")
+                    Text("Custom token").tag(TokenPreset.custom)
                 }
                 .accessibilityIdentifier("token-picker")
+
+                if let preset = store.draft.preset {
+                    Picker("Chain", selection: selectedNetwork) {
+                        ForEach(preset.networks) { network in
+                            Text(network.title).tag(network.locator)
+                        }
+                    }
+                    .accessibilityIdentifier("chain-picker")
+                }
 
                 if store.draft.preset == nil {
                     TextField("chain:token-address", text: $store.draft.customTokenLocator)
@@ -143,6 +152,13 @@ struct OrderSectionView: View {
         } message: { message in
             Text(message)
         }
+    }
+
+    private var selectedNetwork: Binding<String> {
+        Binding(
+            get: { store.draft.network?.locator ?? store.draft.networkLocator },
+            set: { store.draft.networkLocator = $0 }
+        )
     }
 }
 
