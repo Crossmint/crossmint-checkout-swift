@@ -32,9 +32,15 @@ struct SidebarView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Label("Playground", image: "crossmint-icon")
-                    .labelStyle(.titleAndIcon)
-                    .font(.headline)
+                Label {
+                    Text("Playground")
+                } icon: {
+                    Image("crossmint-icon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                }
+                .labelStyle(.titleAndIcon)
             }
         }
         .accessibilityIdentifier("sidebar-list")
