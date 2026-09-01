@@ -66,7 +66,11 @@ struct OrderSectionView: View {
             } header: {
                 Text("Item")
             } footer: {
-                Text("Each preset is a testnet token, so an order here cannot move real funds.")
+                if store.draft.preset == nil {
+                    Text("Use the format chain:address, such as base:0x833…. The demo does not check that the token exists, so validate it yourself.")
+                } else {
+                    Text("Each preset is a testnet token, so an order here cannot move real funds.")
+                }
             }
 
             Section("Pay with") {
@@ -142,6 +146,10 @@ struct OrderSectionView: View {
             } header: {
                 Text("Paste an order from your backend")
             }
+        }
+        .onChange(of: store.draft.tokenSymbol) { _, newValue in
+            guard newValue != TokenPreset.custom else { return }
+            store.draft.customTokenLocator = ""
         }
         .alert(
             "Could not create the order",
