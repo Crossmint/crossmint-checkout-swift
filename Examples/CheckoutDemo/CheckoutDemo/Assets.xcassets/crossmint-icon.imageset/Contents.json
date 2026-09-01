@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "crossmint-icon.png",
+      "filename" : "crossmint-mark-green.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "crossmint-icon@2x.png",
+      "filename" : "crossmint-mark-green 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "crossmint-icon@3x.png",
+      "filename" : "crossmint-mark-green 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
