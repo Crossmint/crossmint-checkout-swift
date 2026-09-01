@@ -24,14 +24,10 @@ struct CheckoutPreviewView: View {
                     .ignoresSafeArea()
                     .safeAreaPadding()
             } else {
-                ContentUnavailableView(
-                    "No order yet",
-                    systemImage: "creditcard",
-                    description: Text("Create an order in the Order section. The checkout appears here.")
-                )
+                CheckoutPreviewEmptyState()
             }
         }
-        .navigationTitle("Checkout")
+        .navigationTitle(store.session != nil ? "Checkout" : "")
         #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
