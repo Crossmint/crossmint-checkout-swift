@@ -10,6 +10,8 @@ import SwiftUI
 struct SidebarView: View {
     @Binding var selection: SidebarSection?
 
+    @State private var isShowingSettings = false
+
     var body: some View {
         List(selection: $selection) {
             Section("Configuration") {
@@ -41,6 +43,25 @@ struct SidebarView: View {
                         .frame(width: 24, height: 24)
                 }
                 .labelStyle(.titleAndIcon)
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Settings", systemImage: "gear") {
+                    isShowingSettings = true
+                }
+                .accessibilityIdentifier("show-settings-button")
+            }
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            NavigationStack {
+                SettingsSectionView()
+                    .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { isShowingSettings = false }
+                                .accessibilityIdentifier("close-settings-button")
+                        }
+                    }
             }
         }
         .accessibilityIdentifier("sidebar-list")
