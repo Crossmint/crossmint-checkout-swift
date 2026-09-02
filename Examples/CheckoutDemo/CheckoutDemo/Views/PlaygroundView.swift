@@ -17,7 +17,10 @@ struct PlaygroundView: View {
         @Bindable var store = store
 
         NavigationSplitView {
-            SidebarView(selection: $store.selection)
+            SidebarView(
+                selection: $store.selection,
+                showsActiveOrder: horizontalSizeClass != .compact
+            )
         } content: {
             SectionDetailView(
                 section: store.selection,

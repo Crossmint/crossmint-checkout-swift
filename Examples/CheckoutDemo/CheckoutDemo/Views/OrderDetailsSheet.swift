@@ -38,6 +38,26 @@ struct OrderDetailsSheet: View {
                 } footer: {
                     Text("The SDK reports the phase and the payment status as the checkout runs.")
                 }
+
+                Section {
+                    if store.events.isEmpty {
+                        Text("No events yet")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(store.events) { event in
+                            EventRow(event: event)
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Events")
+                        Spacer(minLength: 8)
+                        Button("Clear") { store.clearEvents() }
+                            .disabled(store.events.isEmpty)
+                            .accessibilityIdentifier("clear-events-button")
+                    }
+                }
+                .accessibilityIdentifier("order-events-section")
             }
             .navigationTitle("Order details")
             .navigationBarTitleDisplayMode(.inline)

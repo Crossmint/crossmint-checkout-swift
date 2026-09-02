@@ -9,7 +9,9 @@ import SwiftUI
 
 struct SidebarView: View {
     @Binding var selection: SidebarSection?
+    var showsActiveOrder = false
 
+    @Environment(DemoStore.self) private var store
     @State private var isShowingAbout = false
 
     var body: some View {
@@ -59,6 +61,11 @@ struct SidebarView: View {
                     }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if showsActiveOrder, let session = store.session {
+                OrderStatusCard(session: session)
+            }
+        }
         .accessibilityIdentifier("sidebar-list")
     }
 
@@ -74,5 +81,6 @@ struct SidebarView: View {
 #Preview {
     NavigationStack {
         SidebarView(selection: .constant(.order))
+            .environment(DemoStore())
     }
 }

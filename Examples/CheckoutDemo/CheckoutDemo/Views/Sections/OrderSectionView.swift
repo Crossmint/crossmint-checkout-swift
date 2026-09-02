@@ -31,11 +31,6 @@ struct OrderSectionView: View {
             case .existing: existingOrderFields
             }
         }
-        .safeAreaInset(edge: .top) {
-            if let session = store.session {
-                OrderStatusCard(session: session)
-            }
-        }
         .onChange(of: store.draft.tokenSymbol) { _, newValue in
             guard newValue != TokenPreset.custom else { return }
             store.draft.customTokenLocator = ""

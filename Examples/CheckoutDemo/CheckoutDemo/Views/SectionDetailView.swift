@@ -52,7 +52,7 @@ struct SectionDetailView: View {
         }
         .sheet(isPresented: $isShowingCheckout) {
             NavigationStack {
-                CheckoutPreviewView(apiKey: apiKey)
+                CheckoutPreviewView(apiKey: apiKey, showsOrderDetailsButton: true)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") { isShowingCheckout = false }
