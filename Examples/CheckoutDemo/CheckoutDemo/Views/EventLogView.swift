@@ -15,6 +15,7 @@ struct EventLogView: View {
             EventRow(event: event)
         }
         .accessibilityIdentifier("event-log-list")
+        .listStyle(.insetGrouped)
         .overlay {
             if store.events.isEmpty {
                 ContentUnavailableView(
