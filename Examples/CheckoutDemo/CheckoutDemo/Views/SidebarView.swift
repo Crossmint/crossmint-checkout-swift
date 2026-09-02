@@ -54,14 +54,14 @@ struct SidebarView: View {
                     .navigationTitle("About")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { isShowingAbout = false }
+                        ToolbarItem(placement: .cancellationAction) {
+                            CloseButton { isShowingAbout = false }
                                 .accessibilityIdentifier("close-about-button")
                         }
                     }
             }
         }
-        .safeAreaInset(edge: .bottom) {
+        .compatibleSafeAreaEdge(.bottom) {
             if showsActiveOrder, let session = store.session {
                 OrderStatusCard(session: session)
             }

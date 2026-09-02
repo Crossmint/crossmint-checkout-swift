@@ -55,7 +55,7 @@ struct SectionDetailView: View {
                 CheckoutPreviewView(apiKey: apiKey, showsOrderDetailsButton: true)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") { isShowingCheckout = false }
+                            CloseButton { isShowingCheckout = false }
                                 .accessibilityIdentifier("close-checkout-button")
                         }
                     }

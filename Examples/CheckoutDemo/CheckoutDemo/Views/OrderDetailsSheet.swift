@@ -62,8 +62,8 @@ struct OrderDetailsSheet: View {
             .navigationTitle("Order details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                ToolbarItem(placement: .cancellationAction) {
+                    CloseButton { dismiss() }
                         .accessibilityIdentifier("close-order-details-button")
                 }
             }

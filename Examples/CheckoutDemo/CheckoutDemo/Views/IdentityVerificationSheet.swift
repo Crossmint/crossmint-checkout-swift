@@ -42,7 +42,7 @@ struct IdentityVerificationSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    CloseButton { dismiss() }
                         .accessibilityIdentifier("close-identity-verification-button")
                 }
             }
