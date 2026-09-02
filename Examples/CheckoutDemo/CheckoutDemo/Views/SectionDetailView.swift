@@ -37,7 +37,7 @@ struct SectionDetailView: View {
         .toolbar {
             if showsCheckoutButton, SidebarSection.configuration.contains(where: { $0 == section }) {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Checkout", systemImage: "creditcard") {
+                    Button("Checkout", systemImage: "play.fill") {
                         isShowingCheckout = true
                     }
                     .accessibilityIdentifier("show-checkout-button")
