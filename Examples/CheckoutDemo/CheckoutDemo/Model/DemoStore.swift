@@ -17,6 +17,7 @@ final class DemoStore {
     }
 
     private(set) var lastSelection: SidebarSection = .order
+    var orderEntry: OrderEntry = .new
     var draft = OrderDraft()
     var options = CheckoutOptions() {
         didSet { if options != oldValue { previewToken = UUID() } }

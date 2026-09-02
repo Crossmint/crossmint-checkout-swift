@@ -40,6 +40,11 @@ nonisolated struct OrderDraft: Equatable {
         return preset.networks.first { $0.locator == networkLocator } ?? preset.networks.first
     }
 
+    var networkSelection: String {
+        get { network?.locator ?? networkLocator }
+        set { networkLocator = newValue }
+    }
+
     var tokenLocator: String {
         network?.locator ?? customTokenLocator.trimmingCharacters(in: .whitespacesAndNewlines)
     }

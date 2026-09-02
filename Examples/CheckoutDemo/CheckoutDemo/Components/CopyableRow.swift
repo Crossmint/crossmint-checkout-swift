@@ -6,16 +6,11 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
 
 struct CopyableRow: View {
     let label: String
     let value: String
     var accessibilityID: String?
-
-    @State private var didCopy = false
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -27,25 +22,13 @@ struct CopyableRow: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .accessibilityIdentifier(accessibilityID ?? label)
-            Button {
-                copy()
-            } label: {
-                Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.tint)
-            .accessibilityLabel("Copy \(label)")
+            CopyButton(value: value, label: "Copy \(label)")
         }
     }
+}
 
-    private func copy() {
-        #if canImport(UIKit)
-        UIPasteboard.general.string = value
-        #endif
-        didCopy = true
-        Task { @concurrent in
-            try? await Task.sleep(for: .seconds(1.5))
-            await MainActor.run { didCopy = false }
-        }
+#Preview {
+    List {
+        CopyableRow(label: "orderId", value: "ord_a1b2c3d4e5f6")
     }
 }

@@ -40,8 +40,10 @@ struct SectionDetailView: View {
                     Button("Checkout", systemImage: "play.fill") {
                         isShowingCheckout = true
                     }
+                    .disabled(store.session == nil)
                     .accessibilityIdentifier("show-checkout-button")
                     .buttonStyle(.borderedProminent)
+                    .tint(.green)
                 }
             }
         }
