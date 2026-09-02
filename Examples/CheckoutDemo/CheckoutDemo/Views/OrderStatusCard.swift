@@ -16,6 +16,15 @@ struct OrderStatusCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Circle()
+                    .frame(width: 8, height: 8)
+                    .foregroundStyle(.green)
+                Text("ACTIVE ORDER")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.secondary)
+            }
             HStack(spacing: 12) {
                 Image(systemName: symbolName)
                     .font(.title3)
@@ -36,7 +45,6 @@ struct OrderStatusCard: View {
 
                 Spacer(minLength: 8)
 
-                CopyButton(value: session.orderId, label: "Copy orderId")
             }
 
             Divider()
@@ -54,10 +62,8 @@ struct OrderStatusCard: View {
             .buttonStyle(.borderless)
         }
         .padding(14)
-        .background(.background, in: .rect(cornerRadius: 16))
         .padding(.horizontal)
         .padding(.bottom, 8)
-        .background(Color(.systemGroupedBackground))
         .sheet(isPresented: $isShowingDetails) {
             OrderDetailsSheet(session: session).environment(store)
         }

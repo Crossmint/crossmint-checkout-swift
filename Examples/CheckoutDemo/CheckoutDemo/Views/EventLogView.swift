@@ -11,18 +11,17 @@ struct EventLogView: View {
     @Environment(DemoStore.self) private var store
 
     var body: some View {
-        Group {
+        List(store.events) { event in
+            EventRow(event: event)
+        }
+        .accessibilityIdentifier("event-log-list")
+        .overlay {
             if store.events.isEmpty {
                 ContentUnavailableView(
                     "No events yet",
                     systemImage: "list.bullet.rectangle",
                     description: Text("Start a checkout. The SDK reports order updates here.")
                 )
-            } else {
-                List(store.events) { event in
-                    EventRow(event: event)
-                }
-                .accessibilityIdentifier("event-log-list")
             }
         }
         .navigationTitle("Events")
