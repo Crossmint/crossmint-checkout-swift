@@ -22,6 +22,7 @@ public struct CrossmintIdentityVerification: View {
     private var onCompleteHandler: ((IdentityVerificationStatus) -> Void)?
     private var onCancelHandler: (() -> Void)?
     private var onErrorHandler: ((IdentityVerificationError) -> Void)?
+    @State private var isLoading = true
 
     public init(
         apiKey: String,
@@ -77,8 +78,16 @@ public struct CrossmintIdentityVerification: View {
                         reason: .widgetUnavailable,
                         message: message
                     ))
-                }
+                },
+                onLoadingChanged: { isLoading = $0 }
             )
+            .overlay {
+                if isLoading {
+                    CheckoutLoadingView()
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: isLoading)
         case .failure(let error):
             CheckoutErrorView(error: error)
         }
