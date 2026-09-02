@@ -21,7 +21,7 @@ struct OrderSectionView: View {
                     LabeledContent("Source", value: session.source.rawValue)
                     LabeledContent("Phase", value: store.phaseDescription)
                         .accessibilityIdentifier("order-phase-label")
-                    LabeledContent("Payment", value: store.paymentStatusDescription)
+                    LabeledContent("Payment status", value: store.paymentStatusDescription)
                         .accessibilityIdentifier("payment-status-label")
 
                     Button("Discard order", systemImage: "trash", role: .destructive) {
@@ -67,7 +67,7 @@ struct OrderSectionView: View {
                 Text("Item")
             } footer: {
                 if store.draft.preset == nil {
-                    Text("Use the format chain:address, such as base:0x833…. The demo does not check that the token exists, so validate it yourself.")
+                    Text("Use the format chain:address, such as base:0x833…. The demo does not check that the token exists.")
                 } else {
                     Text("Each preset is a testnet token, so an order here cannot move real funds.")
                 }

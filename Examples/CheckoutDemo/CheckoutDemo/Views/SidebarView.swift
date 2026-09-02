@@ -10,22 +10,17 @@ import SwiftUI
 struct SidebarView: View {
     @Binding var selection: SidebarSection?
 
-    @State private var isShowingSettings = false
+    @State private var isShowingAbout = false
 
     var body: some View {
         List(selection: $selection) {
-            Section("Configuration") {
-                ForEach(SidebarSection.configuration) { section in
+            Section("Checkout") {
+                ForEach(SidebarSection.checkout) { section in
                     row(for: section)
                 }
             }
-            Section("Components") {
-                ForEach(SidebarSection.components) { section in
-                    row(for: section)
-                }
-            }
-            Section("Diagnostics") {
-                ForEach(SidebarSection.diagnostics) { section in
+            Section("Activity") {
+                ForEach(SidebarSection.activity) { section in
                     row(for: section)
                 }
             }
@@ -45,21 +40,21 @@ struct SidebarView: View {
                 .labelStyle(.titleAndIcon)
             }
             ToolbarItem(placement: .topBarLeading) {
-                Button("Settings", systemImage: "gear") {
-                    isShowingSettings = true
+                Button("About", systemImage: "info.circle") {
+                    isShowingAbout = true
                 }
-                .accessibilityIdentifier("show-settings-button")
+                .accessibilityIdentifier("show-about-button")
             }
         }
-        .sheet(isPresented: $isShowingSettings) {
+        .sheet(isPresented: $isShowingAbout) {
             NavigationStack {
-                SettingsSectionView()
-                    .navigationTitle("Settings")
+                AboutView()
+                    .navigationTitle("About")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { isShowingSettings = false }
-                                .accessibilityIdentifier("close-settings-button")
+                            Button("Done") { isShowingAbout = false }
+                                .accessibilityIdentifier("close-about-button")
                         }
                     }
             }

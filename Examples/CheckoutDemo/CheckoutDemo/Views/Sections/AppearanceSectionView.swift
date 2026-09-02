@@ -16,8 +16,8 @@ struct AppearanceSectionView: View {
         Form {
             Section {
                 ColorField(label: "Background", hex: $store.options.colors.backgroundPrimary)
-                ColorField(label: "Text primary", hex: $store.options.colors.textPrimary)
-                ColorField(label: "Text secondary", hex: $store.options.colors.textSecondary)
+                ColorField(label: "Primary text", hex: $store.options.colors.textPrimary)
+                ColorField(label: "Secondary text", hex: $store.options.colors.textSecondary)
                 ColorField(label: "Border", hex: $store.options.colors.borderPrimary)
                 ColorField(label: "Accent", hex: $store.options.colors.accent)
                 ColorField(label: "Danger", hex: $store.options.colors.danger)
@@ -25,11 +25,11 @@ struct AppearanceSectionView: View {
             } header: {
                 Text("Colors")
             } footer: {
-                Text("Pick a color, or type a hex value with or without the leading #. Leave a field empty to keep the checkout default. The checkout reloads after each change.")
+                Text("Type a hex value with or without the leading #, or leave a field empty to keep the checkout default.")
             }
 
             Section {
-                Toggle("Override border radius", isOn: borderRadiusEnabled)
+                Toggle("Custom border radius", isOn: borderRadiusEnabled)
                     .accessibilityIdentifier("border-radius-toggle")
 
                 if let radius = store.options.borderRadius {

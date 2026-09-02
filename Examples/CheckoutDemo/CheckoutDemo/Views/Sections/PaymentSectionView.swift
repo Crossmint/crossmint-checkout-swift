@@ -19,11 +19,13 @@ struct PaymentSectionView: View {
                     .accessibilityIdentifier("fiat-enabled-toggle")
                 Toggle("Crypto", isOn: $store.options.cryptoEnabled)
                     .accessibilityIdentifier("crypto-enabled-toggle")
+            } header: {
+                Text("Payment types")
             } footer: {
-                Text("The buyer needs at least one of these methods.")
+                Text("The buyer needs at least one of these types.")
             }
 
-            Section("Allowed fiat methods") {
+            Section("Fiat methods") {
                 Toggle("Card", isOn: $store.options.allowCard)
                     .accessibilityIdentifier("card-allowed-toggle")
                 Toggle("Apple Pay", isOn: $store.options.allowApplePay)
@@ -32,18 +34,6 @@ struct PaymentSectionView: View {
                     .accessibilityIdentifier("google-pay-allowed-toggle")
             }
             .disabled(!store.options.fiatEnabled)
-
-            Section {
-                Toggle(
-                    "Handle identity verification externally",
-                    isOn: $store.options.externalIdentityVerification
-                )
-                .accessibilityIdentifier("external-identity-verification-toggle")
-            } header: {
-                Text("Identity verification")
-            } footer: {
-                Text("The app presents CrossmintIdentityVerification instead of the step inside the checkout.")
-            }
         }
     }
 }

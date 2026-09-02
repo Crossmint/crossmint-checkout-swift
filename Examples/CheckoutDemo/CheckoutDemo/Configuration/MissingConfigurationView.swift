@@ -25,7 +25,7 @@ struct MissingConfigurationView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.quaternary, in: .rect(cornerRadius: 8))
 
-                Text("Run this command from Examples/CheckoutDemo. Add your ck_staging_ key to the new file, then build again. Git ignores Secrets.xcconfig.")
+                Text("Run this command from Examples/CheckoutDemo. Add a ck_staging_ key from console.crossmint.com to the new file, then build again. Git ignores Secrets.xcconfig.")
             }
             .padding(.top, 4)
         }

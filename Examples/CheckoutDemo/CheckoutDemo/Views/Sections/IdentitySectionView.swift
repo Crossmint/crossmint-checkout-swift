@@ -18,6 +18,16 @@ struct IdentitySectionView: View {
         @Bindable var store = store
 
         Form {
+            Section {
+                Toggle(
+                    "Present verification in the app",
+                    isOn: $store.options.externalIdentityVerification
+                )
+                .accessibilityIdentifier("external-identity-verification-toggle")
+            } footer: {
+                Text("The checkout leaves out its verification step. When an order needs one, the app presents CrossmintIdentityVerification instead.")
+            }
+
             if let credentials = store.identityVerificationCredentials {
                 Section {
                     CopyableRow(
@@ -31,8 +41,6 @@ struct IdentitySectionView: View {
                     .accessibilityIdentifier("adopt-order-credentials-button")
                 } header: {
                     Text("From the active order")
-                } footer: {
-                    Text("The active order needs identity verification.")
                 }
             }
 
@@ -62,10 +70,6 @@ struct IdentitySectionView: View {
                     }
                 }
                 .accessibilityIdentifier("identity-locale-picker")
-            } header: {
-                Text("Locale")
-            } footer: {
-                Text("The locale sets the language of the verification flow.")
             }
 
             Section {
@@ -75,7 +79,7 @@ struct IdentitySectionView: View {
                 .disabled(store.manualIdentityCredentials == nil)
                 .accessibilityIdentifier("open-identity-verification-button")
             } footer: {
-                Text("On staging, a verification completes from the form data alone. No camera or document scan is necessary.")
+                Text("On staging, you can finish a verification with the form data alone. No camera or document scan is necessary.")
             }
         }
         .sheet(item: $presentedCredentials) { credentials in

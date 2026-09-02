@@ -14,9 +14,9 @@ nonisolated struct CheckoutOptions: Equatable {
     var allowApplePay: Bool = true
     var allowGooglePay: Bool = false
 
-    var hideDestinationInput: Bool = false
-    var hideReceiptEmailInput: Bool = false
-    var hideGlobalMessage: Bool = false
+    var showsDestinationInput: Bool = true
+    var showsReceiptEmailInput: Bool = true
+    var showsStatusMessage: Bool = true
 
     var colors = AppearanceColors()
     var borderRadius: Double?
@@ -50,16 +50,16 @@ nonisolated struct CheckoutOptions: Equatable {
 
     private var appearanceRules: CheckoutAppearanceRules? {
         let radius = borderRadius.map { "\(Int($0))px" }
-        let hasDisplayRule = hideDestinationInput || hideReceiptEmailInput || hideGlobalMessage
-        guard hasDisplayRule || radius != nil else { return nil }
+        let hidesElement = !showsDestinationInput || !showsReceiptEmailInput || !showsStatusMessage
+        guard hidesElement || radius != nil else { return nil }
 
         return CheckoutAppearanceRules(
-            destinationInput: hideDestinationInput
-                ? CheckoutDestinationInputRule(display: "hidden") : nil,
-            receiptEmailInput: hideReceiptEmailInput
-                ? CheckoutReceiptEmailInputRule(display: "hidden") : nil,
-            globalMessage: hideGlobalMessage
-                ? CheckoutGlobalMessageRule(display: "hidden") : nil,
+            destinationInput: showsDestinationInput
+                ? nil : CheckoutDestinationInputRule(display: "hidden"),
+            receiptEmailInput: showsReceiptEmailInput
+                ? nil : CheckoutReceiptEmailInputRule(display: "hidden"),
+            globalMessage: showsStatusMessage
+                ? nil : CheckoutGlobalMessageRule(display: "hidden"),
             input: radius.map { CheckoutInputRule(borderRadius: $0) },
             tab: radius.map { CheckoutTabRule(borderRadius: $0) },
             primaryButton: radius.map { CheckoutPrimaryButtonRule(borderRadius: $0) }

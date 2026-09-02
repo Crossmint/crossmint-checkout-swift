@@ -21,26 +21,27 @@ struct SectionDetailView: View {
             case .order: OrderSectionView()
             case .payment: PaymentSectionView()
             case .appearance: AppearanceSectionView()
-            case .elements: ElementsSectionView()
+            case .fields: FieldsSectionView()
             case .identity: IdentitySectionView(apiKey: apiKey)
             case .events: EventLogView()
             case nil:
                 ContentUnavailableView(
-                    "No section selected",
+                    "Nothing selected",
                     systemImage: "sidebar.left",
-                    description: Text("Select a section in the sidebar to configure the checkout.")
+                    description: Text("Choose a section in the sidebar to set up the checkout.")
                 )
             }
         }
         .navigationTitle(section?.title ?? "Playground")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if showsCheckoutButton, SidebarSection.configuration.contains(where: { $0 == section }) {
+            if showsCheckoutButton, section?.configuresCheckout == true {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Checkout", systemImage: "play.fill") {
                         isShowingCheckout = true
                     }
                     .accessibilityIdentifier("show-checkout-button")
+                    .buttonStyle(.borderedProminent)
                 }
             }
         }
