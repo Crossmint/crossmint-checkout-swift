@@ -11,9 +11,10 @@ struct SectionDetailView: View {
     let section: SidebarSection?
     let apiKey: String
     let showsCheckoutButton: Bool
+    @Binding var isShowingCheckout: Bool
+    @Binding var checkoutDetent: PresentationDetent
 
     @Environment(DemoStore.self) private var store
-    @State private var isShowingCheckout = false
 
     var body: some View {
         Group {
@@ -38,6 +39,7 @@ struct SectionDetailView: View {
             if showsCheckoutButton, section?.configuresCheckout == true {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Checkout", systemImage: "play.fill") {
+                        checkoutDetent = .large
                         isShowingCheckout = true
                     }
                     .disabled(store.session == nil)
@@ -46,21 +48,6 @@ struct SectionDetailView: View {
                     .tint(.green)
                 }
             }
-        }
-        .onChange(of: showsCheckoutButton) { _, newValue in
-            if !newValue { isShowingCheckout = false }
-        }
-        .sheet(isPresented: $isShowingCheckout) {
-            NavigationStack {
-                CheckoutPreviewView(apiKey: apiKey, showsOrderDetailsButton: true)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            CloseButton { isShowingCheckout = false }
-                                .accessibilityIdentifier("close-checkout-button")
-                        }
-                    }
-            }
-            .environment(store)
         }
     }
 }

@@ -12,6 +12,10 @@ struct PlaygroundView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var store = DemoStore()
+    @State private var isShowingCheckout = false
+    @State private var checkoutDetent: PresentationDetent = .large
+
+    private static let parkedDetent = PresentationDetent.height(96)
 
     var body: some View {
         @Bindable var store = store
@@ -25,15 +29,33 @@ struct PlaygroundView: View {
             SectionDetailView(
                 section: store.selection,
                 apiKey: apiKey,
-                showsCheckoutButton: horizontalSizeClass == .compact
+                showsCheckoutButton: horizontalSizeClass == .compact,
+                isShowingCheckout: $isShowingCheckout,
+                checkoutDetent: $checkoutDetent
             )
         } detail: {
             CheckoutPreviewView(apiKey: apiKey)
         }
         .environment(store)
         .onChange(of: horizontalSizeClass) { _, newValue in
+            if newValue != .compact { isShowingCheckout = false }
             guard newValue != .compact, store.selection == nil else { return }
             store.selection = store.lastSelection
+        }
+        .sheet(isPresented: $isShowingCheckout) {
+            NavigationStack {
+                CheckoutPreviewView(apiKey: apiKey, showsOrderDetailsButton: true)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            CloseButton { isShowingCheckout = false }
+                                .accessibilityIdentifier("close-checkout-button")
+                        }
+                    }
+            }
+            .presentationDetents([Self.parkedDetent, .large], selection: $checkoutDetent)
+            .presentationBackgroundInteraction(.enabled(upThrough: Self.parkedDetent))
+            .presentationDragIndicator(.visible)
+            .environment(store)
         }
     }
 }
