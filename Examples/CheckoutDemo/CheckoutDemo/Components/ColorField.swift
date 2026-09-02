@@ -17,6 +17,7 @@ struct ColorField: View {
     @State private var draft = ""
     @State private var pickerColor = Self.defaultPickerColor
     @State private var isAdoptingHex = false
+    @State private var isShowingPicker = false
     @State private var commitTask: Task<Void, Never>?
     @FocusState private var isFocused: Bool
 
@@ -26,10 +27,20 @@ struct ColorField: View {
     var body: some View {
         LabeledContent(label) {
             HStack(spacing: 8) {
-                ColorPicker("", selection: $pickerColor, supportsOpacity: false)
-                    .labelsHidden()
-                    .accessibilityLabel("\(label) color")
-                    .accessibilityIdentifier("\(identifier)-picker")
+                Button {
+                    isShowingPicker = true
+                } label: {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(pickerColor)
+                        .frame(width: 28, height: 28)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(.separator)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(label) color")
+                .accessibilityIdentifier("\(identifier)-picker")
 
                 TextField("default", text: $draft)
                     .font(.callout.monospaced())
@@ -59,6 +70,21 @@ struct ColorField: View {
         .onChange(of: isFocused) { _, focused in
             guard !focused else { return }
             commitDraft()
+        }
+        .sheet(isPresented: $isShowingPicker) {
+            NavigationStack {
+                SystemColorPicker(color: $pickerColor)
+                    .ignoresSafeArea()
+                    .navigationTitle(label)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            CloseButton { isShowingPicker = false }
+                                .accessibilityIdentifier("\(identifier)-picker-close-button")
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
         }
     }
 
