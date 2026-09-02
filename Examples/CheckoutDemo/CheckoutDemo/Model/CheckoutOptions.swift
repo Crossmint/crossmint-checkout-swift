@@ -19,7 +19,7 @@ nonisolated struct CheckoutOptions: Equatable {
     var showsStatusMessage: Bool = true
 
     var colors = AppearanceColors()
-    var borderRadius: Double?
+    var radii = AppearanceRadii()
 
     var externalIdentityVerification: Bool = true
 
@@ -49,9 +49,8 @@ nonisolated struct CheckoutOptions: Equatable {
     }
 
     private var appearanceRules: CheckoutAppearanceRules? {
-        let radius = borderRadius.map { "\(Int($0))px" }
         let hidesElement = !showsDestinationInput || !showsReceiptEmailInput || !showsStatusMessage
-        guard hidesElement || radius != nil else { return nil }
+        guard hidesElement || !radii.isEmpty else { return nil }
 
         return CheckoutAppearanceRules(
             destinationInput: showsDestinationInput
@@ -60,10 +59,28 @@ nonisolated struct CheckoutOptions: Equatable {
                 ? nil : CheckoutReceiptEmailInputRule(display: "hidden"),
             globalMessage: showsStatusMessage
                 ? nil : CheckoutGlobalMessageRule(display: "hidden"),
-            input: radius.map { CheckoutInputRule(borderRadius: $0) },
-            tab: radius.map { CheckoutTabRule(borderRadius: $0) },
-            primaryButton: radius.map { CheckoutPrimaryButtonRule(borderRadius: $0) }
+            input: radii.inputValue.map { CheckoutInputRule(borderRadius: $0) },
+            tab: radii.tabValue.map { CheckoutTabRule(borderRadius: $0) },
+            primaryButton: radii.primaryButtonValue.map { CheckoutPrimaryButtonRule(borderRadius: $0) }
         )
+    }
+}
+
+nonisolated struct AppearanceRadii: Equatable {
+    var input: Double?
+    var tab: Double?
+    var primaryButton: Double?
+
+    var isEmpty: Bool {
+        input == nil && tab == nil && primaryButton == nil
+    }
+
+    var inputValue: String? { Self.pixels(input) }
+    var tabValue: String? { Self.pixels(tab) }
+    var primaryButtonValue: String? { Self.pixels(primaryButton) }
+
+    private static func pixels(_ radius: Double?) -> String? {
+        radius.map { "\(Int($0))px" }
     }
 }
 
