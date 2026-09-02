@@ -24,7 +24,6 @@ struct SectionDetailView: View {
             case .elements: ElementsSectionView()
             case .identity: IdentitySectionView(apiKey: apiKey)
             case .events: EventLogView()
-            case .settings: SettingsSectionView()
             case nil:
                 ContentUnavailableView(
                     "No section selected",
@@ -44,6 +43,9 @@ struct SectionDetailView: View {
                     .accessibilityIdentifier("show-checkout-button")
                 }
             }
+        }
+        .onChange(of: showsCheckoutButton) { _, newValue in
+            if !newValue { isShowingCheckout = false }
         }
         .sheet(isPresented: $isShowingCheckout) {
             NavigationStack {

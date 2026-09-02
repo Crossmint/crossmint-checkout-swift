@@ -14,7 +14,6 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
     case elements
     case identity
     case events
-    case settings
 
     var id: Self { self }
 
@@ -26,7 +25,6 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
         case .elements: "Elements"
         case .identity: "Identity"
         case .events: "Events"
-        case .settings: "Settings"
         }
     }
 
@@ -38,11 +36,10 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
         case .elements: "slider.horizontal.3"
         case .identity: "person.text.rectangle"
         case .events: "list.bullet.rectangle"
-        case .settings: "gearshape"
         }
     }
 
     static let configuration: [SidebarSection] = [.order, .payment, .appearance, .elements]
     static let components: [SidebarSection] = [.identity]
-    static let diagnostics: [SidebarSection] = [.events, .settings]
+    static let diagnostics: [SidebarSection] = [.events]
 }

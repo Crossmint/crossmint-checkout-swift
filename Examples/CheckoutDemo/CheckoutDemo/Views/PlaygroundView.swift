@@ -28,6 +28,10 @@ struct PlaygroundView: View {
             CheckoutPreviewView(apiKey: apiKey)
         }
         .environment(store)
+        .onChange(of: horizontalSizeClass) { _, newValue in
+            guard newValue != .compact, store.selection == nil else { return }
+            store.selection = store.lastSelection
+        }
     }
 }
 

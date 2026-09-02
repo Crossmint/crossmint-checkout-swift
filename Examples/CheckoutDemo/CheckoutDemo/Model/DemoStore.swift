@@ -12,7 +12,11 @@ import Observation
 @Observable
 @MainActor
 final class DemoStore {
-    var selection: SidebarSection? = .order
+    var selection: SidebarSection? = .order {
+        didSet { if let selection { lastSelection = selection } }
+    }
+
+    private(set) var lastSelection: SidebarSection = .order
     var draft = OrderDraft()
     var options = CheckoutOptions() {
         didSet { if options != oldValue { previewToken = UUID() } }
@@ -37,14 +41,10 @@ final class DemoStore {
     var identitySessionToken = ""
     var identityLocale: CheckoutLocale?
 
-    private let api: OrdersAPI?
-
-    init() {
-        if let apiKey = DemoConfiguration.apiKey, let host = DemoConfiguration.environment?.host {
-            api = OrdersAPI(apiKey: apiKey, host: host)
-        } else {
-            api = nil
-        }
+    private var api: OrdersAPI? {
+        guard let apiKey = DemoConfiguration.apiKey,
+              let host = DemoConfiguration.environment?.host else { return nil }
+        return OrdersAPI(apiKey: apiKey, host: host)
     }
 
     // MARK: - Derived

@@ -19,6 +19,13 @@ enum DemoConfiguration {
         case staging = "staging"
         case production = "production"
 
+        var title: String {
+            switch self {
+            case .staging: "Staging"
+            case .production: "Production"
+            }
+        }
+
         var host: String {
             switch self {
             case .staging: "staging.crossmint.com"
