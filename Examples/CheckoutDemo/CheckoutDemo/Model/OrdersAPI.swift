@@ -10,7 +10,7 @@ import Foundation
 nonisolated struct OrderSession: Equatable {
     enum Source: String {
         case createdInApp = "Created in app"
-        case pasted = "Pasted"
+        case existing = "Existing"
     }
 
     var orderId: String

@@ -35,8 +35,8 @@ final class DemoStore {
         set { if !newValue { orderErrorMessage = nil } }
     }
 
-    var pastedOrderId = ""
-    var pastedClientSecret = ""
+    var existingOrderId = ""
+    var existingClientSecret = ""
 
     var identityInquiryId = ""
     var identitySessionToken = ""
@@ -78,9 +78,9 @@ final class DemoStore {
         identitySessionToken = credentials.sessionToken ?? ""
     }
 
-    var canPasteOrder: Bool {
-        !pastedOrderId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !pastedClientSecret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    var canUseExistingOrder: Bool {
+        !existingOrderId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !existingClientSecret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Order lifecycle
@@ -112,15 +112,15 @@ final class DemoStore {
         isCreatingOrder = false
     }
 
-    func usePastedOrder() {
+    func useExistingOrder() {
         clearOrderState()
         orderErrorMessage = nil
         session = OrderSession(
-            orderId: pastedOrderId.trimmingCharacters(in: .whitespacesAndNewlines),
-            clientSecret: pastedClientSecret.trimmingCharacters(in: .whitespacesAndNewlines),
-            source: .pasted
+            orderId: existingOrderId.trimmingCharacters(in: .whitespacesAndNewlines),
+            clientSecret: existingClientSecret.trimmingCharacters(in: .whitespacesAndNewlines),
+            source: .existing
         )
-        log(.order, "Order pasted", session?.orderId)
+        log(.order, "Existing order used", session?.orderId)
     }
 
     func discardOrder() {

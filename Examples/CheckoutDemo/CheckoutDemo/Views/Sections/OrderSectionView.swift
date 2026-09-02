@@ -150,25 +150,25 @@ struct OrderSectionView: View {
         @Bindable var store = store
 
         Section {
-            TextField("orderId", text: $store.pastedOrderId)
+            TextField("orderId", text: $store.existingOrderId)
                 .font(.callout.monospaced())
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-                .accessibilityIdentifier("paste-order-id-input")
+                .accessibilityIdentifier("existing-order-id-input")
 
-            TextField("clientSecret", text: $store.pastedClientSecret)
+            TextField("clientSecret", text: $store.existingClientSecret)
                 .font(.callout.monospaced())
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-                .accessibilityIdentifier("paste-client-secret-input")
+                .accessibilityIdentifier("existing-client-secret-input")
         } footer: {
             Text("Both values come from the Orders API response your backend gets.")
         }
 
         Section {
-            Button("Use this order") { store.usePastedOrder() }
-                .disabled(!store.canPasteOrder)
-                .accessibilityIdentifier("use-pasted-order-button")
+            Button("Use this order") { store.useExistingOrder() }
+                .disabled(!store.canUseExistingOrder)
+                .accessibilityIdentifier("use-existing-order-button")
         }
     }
 }
