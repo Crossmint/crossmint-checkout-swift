@@ -13,7 +13,7 @@ struct AppearanceSectionView: View {
     var body: some View {
         @Bindable var store = store
 
-        List {
+        Form {
             Section {
                 ColorField(label: "Background", hex: $store.options.colors.backgroundPrimary)
                 ColorField(label: "Primary text", hex: $store.options.colors.textPrimary)
@@ -45,7 +45,6 @@ struct AppearanceSectionView: View {
                 .accessibilityIdentifier("reset-appearance-button")
             }
         }
-        .listStyle(.sidebar)
     }
 
 }

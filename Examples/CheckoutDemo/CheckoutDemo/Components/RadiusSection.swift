@@ -23,18 +23,35 @@ struct RadiusSection: View {
     }
 
     var body: some View {
-        Section(label, isExpanded: $isExpanded) {
-            LabeledContent("Border radius") {
-                Text("\(Int(radius ?? Self.fallback))px")
-                    .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            .accessibilityIdentifier("\(identifier)-value")
+        Section {
+            if isExpanded {
+                LabeledContent("Border radius") {
+                    Text("\(Int(radius ?? Self.fallback))px")
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityIdentifier("\(identifier)-value")
 
-            Slider(value: value, in: Self.range, step: 1)
-                .accessibilityLabel("\(label) border radius")
-                .accessibilityValue("\(Int(radius ?? Self.fallback)) pixels")
-                .accessibilityIdentifier("\(identifier)-slider")
+                Slider(value: value, in: Self.range, step: 1)
+                    .accessibilityLabel("\(label) border radius")
+                    .accessibilityValue("\(Int(radius ?? Self.fallback)) pixels")
+                    .accessibilityIdentifier("\(identifier)-slider")
+            }
+        } header: {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { isExpanded.toggle() }
+            } label: {
+                HStack {
+                    Text(label)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(isExpanded ? 0 : -90))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("\(identifier)-header")
         }
     }
 
@@ -53,7 +70,7 @@ struct RadiusSection: View {
 #Preview {
     @Previewable @State var primaryButton: Double? = 12
 
-    List {
+    Form {
         RadiusSection(label: "Primary button", radius: $primaryButton, isInitiallyExpanded: true)
         RadiusSection(label: "Input", radius: .constant(nil))
     }
