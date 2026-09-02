@@ -15,11 +15,13 @@ struct ColorField: View {
     @Binding var hex: String
 
     @State private var draft = ""
-    @State private var pickerColor = Color.gray
+    @State private var pickerColor = Self.defaultPickerColor
+    @State private var isAdoptingHex = false
     @State private var commitTask: Task<Void, Never>?
     @FocusState private var isFocused: Bool
 
     private static let commitDelay = Duration.milliseconds(500)
+    private static let defaultPickerColor = Color.gray
 
     var body: some View {
         LabeledContent(label) {
@@ -46,6 +48,10 @@ struct ColorField: View {
             adoptHex()
         }
         .onChange(of: pickerColor) { _, newValue in
+            if isAdoptingHex {
+                isAdoptingHex = false
+                return
+            }
             guard let picked = newValue.hexString, picked != hex else { return }
             draft = picked
             scheduleCommit(picked)
@@ -62,7 +68,10 @@ struct ColorField: View {
 
     private func adoptHex() {
         draft = hex
-        if let color = Color(hex: hex) { pickerColor = color }
+        let resolved = Color(hex: hex) ?? Self.defaultPickerColor
+        guard resolved.hexString != pickerColor.hexString else { return }
+        isAdoptingHex = true
+        pickerColor = resolved
     }
 
     private func scheduleCommit(_ value: String) {
@@ -77,10 +86,8 @@ struct ColorField: View {
     private func commitDraft() {
         commitTask?.cancel()
         let trimmed = draft.trimmingCharacters(in: .whitespaces)
-        let resolved = Color(hex: trimmed)
-        hex = resolved == nil ? "" : trimmed
-        draft = hex
-        if let resolved { pickerColor = resolved }
+        hex = Color(hex: trimmed) == nil ? "" : trimmed
+        adoptHex()
     }
 }
 
