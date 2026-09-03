@@ -30,8 +30,6 @@ struct PaymentSectionView: View {
                     .accessibilityIdentifier("card-allowed-toggle")
                 Toggle("Apple Pay", isOn: $store.options.allowApplePay)
                     .accessibilityIdentifier("apple-pay-allowed-toggle")
-                Toggle("Google Pay", isOn: $store.options.allowGooglePay)
-                    .accessibilityIdentifier("google-pay-allowed-toggle")
             }
             .disabled(!store.options.fiatEnabled)
         }

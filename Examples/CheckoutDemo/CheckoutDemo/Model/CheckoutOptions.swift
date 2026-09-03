@@ -12,7 +12,6 @@ nonisolated struct CheckoutOptions: Equatable {
     var fiatEnabled: Bool = true
     var allowCard: Bool = true
     var allowApplePay: Bool = true
-    var allowGooglePay: Bool = false
 
     var showsDestinationInput: Bool = true
     var showsReceiptEmailInput: Bool = true
@@ -29,7 +28,7 @@ nonisolated struct CheckoutOptions: Equatable {
             fiat: CheckoutFiatPayment(
                 enabled: fiatEnabled,
                 allowedMethods: CheckoutAllowedMethods(
-                    googlePay: allowGooglePay,
+                    googlePay: false,
                     applePay: allowApplePay,
                     card: allowCard
                 )
