@@ -25,7 +25,7 @@ nonisolated struct OrderDraft: Equatable {
     var tokenSymbol: String = TokenPreset.usdc.symbol
     var networkLocator: String = TokenPreset.usdc.networks[0].locator
     var customTokenLocator: String = ""
-    var amount: Decimal = 10
+    var amount: Decimal = 1
     var method: Method = .card
     var recipientWalletAddress: String = ""
     var payerAddress: String = ""
