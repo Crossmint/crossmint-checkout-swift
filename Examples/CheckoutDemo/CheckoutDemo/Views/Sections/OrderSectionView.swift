@@ -116,7 +116,7 @@ struct OrderSectionView: View {
                 Task { await store.createOrder() }
             } label: {
                 HStack {
-                    Text(store.session == nil ? "Create order" : "Recreate order")
+                    Text("Start order")
                     Spacer()
                     if store.isCreatingOrder { ProgressView() }
                 }
@@ -148,7 +148,7 @@ struct OrderSectionView: View {
         }
 
         Section {
-            Button("Use this order") { store.useExistingOrder() }
+            Button("Start order") { store.useExistingOrder() }
                 .disabled(!store.canUseExistingOrder)
                 .accessibilityIdentifier("use-existing-order-button")
         }
