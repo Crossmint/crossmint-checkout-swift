@@ -91,24 +91,6 @@ struct OrderSectionView: View {
             }
         }
 
-        Section("Pay with") {
-            Picker("Method", selection: $store.draft.method) {
-                ForEach(OrderDraft.Method.allCases) { method in
-                    Text(method.title).tag(method)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("payment-method-picker")
-
-            if store.draft.method == .crypto {
-                TextField("Payer address", text: $store.draft.payerAddress)
-                    .font(.callout.monospaced())
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .accessibilityIdentifier("payer-address-input")
-            }
-        }
-
         Section {
             TextField("Recipient wallet address", text: $store.draft.recipientWalletAddress)
                 .font(.callout.monospaced())

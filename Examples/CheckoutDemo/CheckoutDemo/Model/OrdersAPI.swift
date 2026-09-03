@@ -29,18 +29,13 @@ nonisolated struct OrdersAPI: Sendable {
 
     func createOrder(from draft: OrderDraft) async throws -> OrderSession {
         var payment: [String: Any] = [
-            "method": draft.method == .card ? "card" : draft.chain,
-            "currency": draft.method == .card ? "usd" : "usdc",
+            "method": "card",
+            "currency": "usd",
         ]
         let receiptEmail = draft.receiptEmail.trimmingCharacters(in: .whitespacesAndNewlines)
         if !receiptEmail.isEmpty {
             payment["receiptEmail"] = receiptEmail
         }
-        let payerAddress = draft.payerAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-        if draft.method == .crypto, !payerAddress.isEmpty {
-            payment["payerAddress"] = payerAddress
-        }
-
         let body: [String: Any] = [
             "payment": payment,
             "lineItems": [
