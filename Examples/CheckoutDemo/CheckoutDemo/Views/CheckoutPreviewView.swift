@@ -14,7 +14,6 @@ struct CheckoutPreviewView: View {
 
     @Environment(DemoStore.self) private var store
     @StateObject private var controller = CrossmintCheckoutController()
-    @State private var identityCredentials: IdentityVerificationCredentials?
     @State private var handledInquiryIDs: Set<String> = []
     @State private var isShowingOrderDetails = false
 
@@ -28,12 +27,19 @@ struct CheckoutPreviewView: View {
                 CheckoutPreviewEmptyState()
             }
         }
-        .navigationTitle(store.session != nil ? "Preview" : "")
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if let credentials = store.previewIdentityCredentials {
+                identityVerification(for: credentials)
+                    .background(Color(.systemBackground))
+            }
+        }
+        .navigationTitle(navigationTitle)
         #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
-            if showsOrderDetailsButton {
+            if showsOrderDetailsButton, store.previewIdentityCredentials == nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Order details", systemImage: "list.bullet.rectangle") {
                         isShowingOrderDetails = true
@@ -48,7 +54,7 @@ struct CheckoutPreviewView: View {
                     handledInquiryIDs.removeAll()
                     store.reloadPreview()
                 }
-                .disabled(store.session == nil)
+                .disabled(store.session == nil && store.previewIdentityCredentials == nil)
                 .accessibilityIdentifier("reload-preview-button")
             }
         }
@@ -57,16 +63,43 @@ struct CheckoutPreviewView: View {
                   let credentials = order?.identityVerificationCredentials,
                   !handledInquiryIDs.contains(credentials.inquiryId) else { return }
             handledInquiryIDs.insert(credentials.inquiryId)
-            identityCredentials = credentials
-        }
-        .sheet(item: $identityCredentials) { credentials in
-            IdentityVerificationSheet(apiKey: apiKey, credentials: credentials).environment(store)
+            store.previewIdentityCredentials = credentials
         }
         .sheet(isPresented: $isShowingOrderDetails) {
             if let session = store.session {
                 OrderDetailsSheet(session: session).environment(store)
             }
         }
+    }
+
+    private var navigationTitle: String {
+        store.session != nil || store.previewIdentityCredentials != nil ? "Preview" : ""
+    }
+
+    private func identityVerification(
+        for credentials: IdentityVerificationCredentials
+    ) -> some View {
+        CrossmintIdentityVerification(
+            apiKey: apiKey,
+            credentials: credentials,
+            locale: store.identityLocale
+        )
+        .onReady { store.handleIdentityVerificationReady() }
+        .onComplete { status in
+            store.handleIdentityVerification(status: status)
+            store.previewIdentityCredentials = nil
+        }
+        .onCancel {
+            store.handleIdentityVerificationCancelled()
+            store.previewIdentityCredentials = nil
+        }
+        .onError { error in
+            store.handleIdentityVerification(error: error)
+        }
+        .accessibilityIdentifier("identity-verification-preview")
+        .id(store.previewToken)
+        .safeAreaPadding()
+        .ignoresSafeArea()
     }
 
     private func checkout(for session: OrderSession) -> some View {

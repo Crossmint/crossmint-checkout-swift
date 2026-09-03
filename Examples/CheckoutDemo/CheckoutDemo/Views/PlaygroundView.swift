@@ -42,6 +42,11 @@ struct PlaygroundView: View {
             guard newValue != .compact, store.selection == nil else { return }
             store.selection = store.lastSelection
         }
+        .onChange(of: store.previewIdentityCredentials) { _, newValue in
+            guard newValue != nil, horizontalSizeClass == .compact else { return }
+            checkoutDetent = .large
+            isShowingCheckout = true
+        }
         .sheet(isPresented: $isShowingCheckout) {
             NavigationStack {
                 CheckoutPreviewView(apiKey: apiKey, showsOrderDetailsButton: true)

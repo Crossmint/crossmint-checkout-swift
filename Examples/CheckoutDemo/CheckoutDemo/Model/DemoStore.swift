@@ -38,6 +38,8 @@ final class DemoStore {
     var existingOrderId = ""
     var existingClientSecret = ""
 
+    var previewIdentityCredentials: IdentityVerificationCredentials?
+
     var identityInquiryId = ""
     var identitySessionToken = ""
     var identityLocale: CheckoutLocale?
@@ -186,5 +188,6 @@ final class DemoStore {
 
     private func clearOrderState() {
         latestOrder = nil
+        previewIdentityCredentials = nil
     }
 }

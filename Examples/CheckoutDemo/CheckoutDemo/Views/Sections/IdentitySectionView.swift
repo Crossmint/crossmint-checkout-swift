@@ -12,7 +12,6 @@ struct IdentitySectionView: View {
     let apiKey: String
 
     @Environment(DemoStore.self) private var store
-    @State private var presentedCredentials: IdentityVerificationCredentials?
 
     var body: some View {
         @Bindable var store = store
@@ -74,21 +73,13 @@ struct IdentitySectionView: View {
 
             Section {
                 Button("Open identity verification", systemImage: "person.text.rectangle") {
-                    presentedCredentials = store.manualIdentityCredentials
+                    store.previewIdentityCredentials = store.manualIdentityCredentials
                 }
                 .disabled(store.manualIdentityCredentials == nil)
                 .accessibilityIdentifier("open-identity-verification-button")
             } footer: {
-                Text("On staging, you can finish a verification with the form data alone. No camera or document scan is necessary.")
+                Text("The verification opens in the preview, in place of the checkout. On staging, you can finish it with the form data alone. No camera or document scan is necessary.")
             }
-        }
-        .sheet(item: $presentedCredentials) { credentials in
-            IdentityVerificationSheet(
-                apiKey: apiKey,
-                credentials: credentials,
-                locale: store.identityLocale
-            )
-            .environment(store)
         }
     }
 }

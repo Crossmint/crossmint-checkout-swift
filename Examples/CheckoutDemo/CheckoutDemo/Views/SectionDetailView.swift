@@ -39,6 +39,7 @@ struct SectionDetailView: View {
             if showsCheckoutButton, section?.configuresCheckout == true {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Checkout", systemImage: "play.fill") {
+                        store.previewIdentityCredentials = nil
                         checkoutDetent = .large
                         isShowingCheckout = true
                     }
