@@ -16,13 +16,18 @@ struct SidebarView: View {
 
     var body: some View {
         List(selection: $selection) {
-            Section("Checkout") {
-                ForEach(SidebarSection.checkout) { section in
+            Section("Payment") {
+                ForEach(SidebarSection.paymentSections) { section in
+                    row(for: section)
+                }
+            }
+            Section("Identity") {
+                ForEach(SidebarSection.identitySections) { section in
                     row(for: section)
                 }
             }
             Section("Activity") {
-                ForEach(SidebarSection.activity) { section in
+                ForEach(SidebarSection.activitySections) { section in
                     row(for: section)
                 }
             }

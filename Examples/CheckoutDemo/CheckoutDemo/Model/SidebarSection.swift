@@ -46,6 +46,7 @@ nonisolated enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    static let checkout: [SidebarSection] = [.order, .payment, .appearance, .fields, .identity]
-    static let activity: [SidebarSection] = [.events]
+    static let paymentSections: [SidebarSection] = [.order, .payment, .appearance, .fields]
+    static let identitySections: [SidebarSection] = [.identity]
+    static let activitySections: [SidebarSection] = [.events]
 }
