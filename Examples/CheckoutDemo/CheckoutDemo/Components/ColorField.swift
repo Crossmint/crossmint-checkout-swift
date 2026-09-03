@@ -112,8 +112,12 @@ struct ColorField: View {
     private func commitDraft() {
         commitTask?.cancel()
         let trimmed = draft.trimmingCharacters(in: .whitespaces)
-        hex = Color(hex: trimmed) == nil ? "" : trimmed
+        hex = Color(hex: trimmed) == nil ? "" : Self.cssColor(trimmed)
         adoptHex()
+    }
+
+    private static func cssColor(_ value: String) -> String {
+        value.hasPrefix("#") ? value.uppercased() : "#" + value.uppercased()
     }
 }
 
