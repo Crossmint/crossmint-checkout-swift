@@ -37,7 +37,6 @@ public struct CrossmintEmbeddedCheckout: View {
     private var onOrderUpdatedHandler: ((CheckoutOrderUpdate) -> Void)?
     private var onOrderCreationFailedHandler: ((String) -> Void)?
     private let explicitEnvironment: CheckoutEnvironment?
-    @State private var isLoading = true
 
     public init(
         apiKey: String,
@@ -138,16 +137,8 @@ public struct CrossmintEmbeddedCheckout: View {
             HostedWebView(
                 url: url,
                 navigationPolicy: .crossmintMainFrame(resolvedHost: URL(string: url)?.host ?? ""),
-                onMessage: handle,
-                onLoadingChanged: { isLoading = $0 }
+                onMessage: handle
             )
-            .overlay {
-                if isLoading {
-                    CheckoutLoadingView()
-                        .transition(.opacity)
-                }
-            }
-            .animation(.easeOut(duration: 0.2), value: isLoading)
         case .failure(let error):
             CheckoutErrorView(error: error)
         }

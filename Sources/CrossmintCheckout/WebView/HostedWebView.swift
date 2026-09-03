@@ -16,7 +16,6 @@ struct HostedWebView: UIViewRepresentable {
     var injectsViewportScript = true
     var onMessage: @MainActor (Any, BridgeResponder) -> Void = { _, _ in }
     var onLoadFailure: ((String) -> Void)?
-    var onLoadingChanged: ((Bool) -> Void)?
 
     private static let messageHandlerName = "crossmint"
 
@@ -97,8 +96,6 @@ struct HostedWebView: UIViewRepresentable {
         let responder = BridgeResponder()
         private(set) var loadedURL: String?
         private var loadFailureGate = LoadFailureGate()
-        private var isLoading = true
-        private var hasLoadedContent = false
 
         init(host: HostedWebView) {
             self.host = host
@@ -107,7 +104,6 @@ struct HostedWebView: UIViewRepresentable {
         func load(_ url: String, in webView: WKWebView) {
             loadedURL = url
             loadFailureGate = LoadFailureGate()
-            hasLoadedContent = false
             guard let url = URL(string: url) else { return }
             webView.load(URLRequest(url: url))
         }
@@ -133,21 +129,10 @@ struct HostedWebView: UIViewRepresentable {
             if navigationResponse.isForMainFrame,
                let statusCode = (navigationResponse.response as? HTTPURLResponse)?.statusCode,
                let message = loadFailureGate.reportOnce(forHTTPStatus: statusCode) {
-                setLoading(false)
                 host.onLoadFailure?(message)
                 return .cancel
             }
             return .allow
-        }
-
-        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-            guard !hasLoadedContent else { return }
-            setLoading(true)
-        }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            hasLoadedContent = true
-            setLoading(false)
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -159,15 +144,8 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         private func reportLoadFailure(_ error: Error) {
-            setLoading(false)
             guard let message = loadFailureGate.reportOnce(for: error) else { return }
             host.onLoadFailure?(message)
-        }
-
-        private func setLoading(_ loading: Bool) {
-            guard isLoading != loading else { return }
-            isLoading = loading
-            host.onLoadingChanged?(loading)
         }
 
         func webView(
