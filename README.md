@@ -34,7 +34,7 @@ POST https://www.crossmint.com/api/2022-06-09/orders
 
 ### 2. Render the checkout client-side
 
-Pass your **client-side API key** (`ck_...`) — the same key used by the Orders API's client-side counterpart. It is required; without it the hosted checkout renders an "Invalid input" configuration error. A server-side key (`sk_...`) is rejected before the page loads, so the key never leaves your app.
+Pass your **client-side API key** (`ck_...`) — the same key used by the Orders API's client-side counterpart. It is required; without it the hosted checkout renders an "Invalid input" configuration error.
 
 ```swift
 import SwiftUI
