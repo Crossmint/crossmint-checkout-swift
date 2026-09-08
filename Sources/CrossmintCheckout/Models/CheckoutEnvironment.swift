@@ -12,10 +12,25 @@ public enum CheckoutEnvironment: Sendable {
     case staging
     case production
 
-    init?(apiKey: String) {
+    init(apiKey: String) throws(CheckoutError) {
+        guard !apiKey.isEmpty else {
+            throw .missingAPIKey
+        }
+        if apiKey.hasPrefix("sk_live") || apiKey.hasPrefix("sk_test") {
+            throw .legacyAPIKey
+        }
+        if apiKey.hasPrefix("sk_") {
+            throw .serverAPIKey
+        }
         let tokens = apiKey.split(separator: "_")
-        guard tokens.count >= 3, tokens[0] == "ck" || tokens[0] == "sk" else { return nil }
-        switch tokens[1] {
+        guard tokens.count >= 3, tokens[0] == "ck", let environment = Self(token: tokens[1]) else {
+            throw .malformedAPIKey
+        }
+        self = environment
+    }
+
+    private init?(token: Substring) {
+        switch token {
         case "production":
             self = .production
         case "staging", "development":
