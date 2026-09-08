@@ -1,5 +1,5 @@
 //
-//  CheckoutAPIKeyTests.swift
+//  CheckoutEnvironmentTests.swift
 //  CrossmintCheckoutTests
 //
 //  Created by Tomás Martins on 9/8/26.
@@ -9,26 +9,26 @@ import Testing
 @testable import CrossmintCheckout
 
 @Test func clientKeyPassesValidation() throws {
-    try CheckoutAPIKey.validate("ck_staging_test")
+    _ = try CheckoutEnvironment(apiKey: "ck_staging_test")
 }
 
 @Test func serverKeyIsRejected() {
     let error = #expect(throws: CheckoutError.self) {
-        try CheckoutAPIKey.validate("sk_staging_test")
+        _ = try CheckoutEnvironment(apiKey: "sk_staging_test")
     }
     #expect(error?.errorDescription?.contains("server API key") == true)
 }
 
 @Test func oldFormatServerKeyIsRejected() {
     let error = #expect(throws: CheckoutError.self) {
-        try CheckoutAPIKey.validate("sk_live_test")
+        _ = try CheckoutEnvironment(apiKey: "sk_live_test")
     }
     #expect(error?.errorDescription?.contains("Old API key format") == true)
 }
 
 @Test func keyWithoutClientPrefixIsRejected() {
     #expect(throws: CheckoutError.self) {
-        try CheckoutAPIKey.validate("not-a-crossmint-key")
+        _ = try CheckoutEnvironment(apiKey: "not-a-crossmint-key")
     }
 }
 

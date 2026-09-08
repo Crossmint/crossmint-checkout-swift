@@ -164,8 +164,6 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     func generateCheckoutUrl() throws -> String {
-        try CheckoutAPIKey.validate(apiKey)
-
         if lineItems != nil {
             throw CheckoutError.notImplemented(
                 "Crossmint Checkout SDK: passing lineItems is not yet implemented"
@@ -210,12 +208,7 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     private func resolvedEnvironment() throws -> CheckoutEnvironment {
-        if let explicitEnvironment {
-            return explicitEnvironment
-        }
-        guard let environment = CheckoutEnvironment(apiKey: apiKey) else {
-            throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
-        }
-        return environment
+        let parsed = try CheckoutEnvironment(apiKey: apiKey)
+        return explicitEnvironment ?? parsed
     }
 }
