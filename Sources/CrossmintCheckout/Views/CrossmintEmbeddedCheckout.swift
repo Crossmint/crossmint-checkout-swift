@@ -164,9 +164,7 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     func generateCheckoutUrl() throws -> String {
-        guard !apiKey.isEmpty else {
-            throw CheckoutError.invalidConfiguration("apiKey is required")
-        }
+        try CheckoutAPIKey.validate(apiKey)
 
         if lineItems != nil {
             throw CheckoutError.notImplemented(

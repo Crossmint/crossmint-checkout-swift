@@ -14,7 +14,7 @@ public enum CheckoutEnvironment: Sendable {
 
     init?(apiKey: String) {
         let tokens = apiKey.split(separator: "_")
-        guard tokens.count >= 3, tokens[0] == "ck" || tokens[0] == "sk" else { return nil }
+        guard tokens.count >= 3, tokens[0] == "ck" else { return nil }
         switch tokens[1] {
         case "production":
             self = .production

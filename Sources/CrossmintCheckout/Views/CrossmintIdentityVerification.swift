@@ -104,6 +104,7 @@ public struct CrossmintIdentityVerification: View {
     }
 
     func generateVerificationUrl() throws -> String {
+        try CheckoutAPIKey.validate(apiKey)
         guard let environment = CheckoutEnvironment(apiKey: apiKey) else {
             throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
         }
