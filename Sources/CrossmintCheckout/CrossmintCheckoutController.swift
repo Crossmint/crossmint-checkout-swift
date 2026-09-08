@@ -10,19 +10,22 @@ import Combine
 
 /// The observable order state of one embedded checkout session.
 ///
-/// Give an instance to ``CrossmintEmbeddedCheckout`` and observe it to react to order changes.
-/// When the order needs identity verification, ``identityVerificationCredentials`` becomes available.
+/// Give an instance to ``CrossmintEmbeddedCheckout``. Observe the instance to react to order changes.
+/// ``identityVerificationCredentials`` has a value when the order needs identity verification.
 /// Call ``clear()`` before you use one controller for a new checkout session.
 @MainActor
 public final class CrossmintCheckoutController: ObservableObject {
+    /// The order in its latest state. The value is `nil` before the first order update.
     @Published public private(set) var order: CheckoutOrder?
+    /// The secret that authorizes reads of the order. The value stays after an update that omits it.
     @Published public private(set) var orderClientSecret: String?
 
-    /// The credentials for the pending identity verification, when the order waits on one.
+    /// The credentials for the pending identity verification. The value is `nil` when the order does not wait on one.
     public var identityVerificationCredentials: IdentityVerificationCredentials? {
         order?.identityVerificationCredentials
     }
 
+    /// Creates a controller with no order.
     public init() {}
 
     /// Removes the stored order state.

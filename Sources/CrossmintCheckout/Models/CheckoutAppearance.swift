@@ -11,8 +11,8 @@ import Foundation
 
 /// The font of one checkout element.
 ///
-/// Each value is a CSS string. The checkout applies only the values you set and keeps
-/// its default for the rest.
+/// Each value is a CSS string. The checkout applies only the values you set. It keeps
+/// the default for the rest.
 public struct CheckoutFontStyle: Codable, Sendable {
     /// The CSS `font-family` value, for example `"Inter, sans-serif"`.
     public let family: String?
@@ -198,7 +198,7 @@ public struct CheckoutPrimaryButtonRule: Codable, Sendable {
     public let colors: CheckoutColorStyle?
     /// The button colors while the pointer is over the button.
     public let hover: CheckoutStateStyle?
-    /// The button colors while the button is disabled.
+    /// The button colors in the disabled state.
     public let disabled: CheckoutStateStyle?
 
     /// Creates a primary button rule. Pass `nil` for a value to keep the checkout default.
@@ -329,8 +329,8 @@ public struct CheckoutAppearanceVariables: Codable, Sendable {
 
 /// The visual customization of ``CrossmintEmbeddedCheckout``.
 ///
-/// Set ``variables`` for the global look and ``rules`` for per-element overrides. A rule
-/// wins over a variable for the element it targets.
+/// Set ``variables`` for the global look. Set ``rules`` for per-element overrides. A rule
+/// has priority over a variable for the element it targets.
 ///
 /// ```swift
 /// let appearance = CheckoutAppearance(

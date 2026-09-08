@@ -9,8 +9,10 @@ import Foundation
 
 /// The presentation mode for the identity verification (KYC) step of embedded checkout.
 ///
-/// Do not set it and checkout shows the step itself. Set `external` and checkout shows nothing for that step.
-/// You must then show ``CrossmintIdentityVerification`` with the order's credentials, or the buyer cannot finish.
+/// If you do not set a value, the checkout shows the step itself. If you set ``external``,
+/// the checkout does not show the step. You must then show ``CrossmintIdentityVerification``
+/// with the credentials of the order. If you do not, the buyer cannot finish.
 public enum IdentityVerificationHandling: String, Sendable {
+    /// Your app shows the identity verification step with ``CrossmintIdentityVerification``.
     case external
 }

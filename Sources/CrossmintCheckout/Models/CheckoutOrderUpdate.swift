@@ -11,7 +11,9 @@ import Foundation
 ///
 /// The `orderClientSecret` authorizes reads of the order. A later update can omit it.
 public struct CheckoutOrderUpdate: Decodable, Sendable {
+    /// The order in its new state. The value is `nil` when the event has no order.
     public let order: CheckoutOrder?
+    /// The secret that authorizes reads of the order. The value is `nil` when the event omits it.
     public let orderClientSecret: String?
 
     private enum CodingKeys: String, CodingKey {

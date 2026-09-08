@@ -7,9 +7,11 @@
 
 import Foundation
 
-/// The Crossmint environment the SDK talks to.
+/// The Crossmint environment the SDK connects to.
 public enum CheckoutEnvironment: Sendable {
+    /// The test environment. A `ck_staging` or `ck_development` key selects it.
     case staging
+    /// The live environment. A `ck_production` key selects it.
     case production
 
     init?(apiKey: String) {
