@@ -105,7 +105,7 @@ import Testing
         credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
 
-    #expect(throws: CheckoutError.self) {
+    #expect(throws: CheckoutError.missingAPIKey) {
         try verification.generateVerificationUrl()
     }
 }
@@ -160,7 +160,7 @@ import Testing
         apiKey: "not-a-crossmint-key",
         credentials: IdentityVerificationCredentials(inquiryId: "inq-123")
     )
-    #expect(throws: CheckoutError.self) {
+    #expect(throws: CheckoutError.malformedAPIKey) {
         try verification.generateVerificationUrl()
     }
 }

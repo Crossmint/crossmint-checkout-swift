@@ -44,7 +44,7 @@ import Testing
 @Test func checkoutMalformedApiKeyThrows() throws {
     let checkout = CrossmintEmbeddedCheckout(apiKey: "not-a-crossmint-key")
 
-    #expect(throws: CheckoutError.self) {
+    #expect(throws: CheckoutError.malformedAPIKey) {
         try checkout.generateCheckoutUrl()
     }
 }
@@ -82,7 +82,7 @@ import Testing
         clientSecret: "secret-456"
     )
 
-    #expect(throws: CheckoutError.self) {
+    #expect(throws: CheckoutError.missingAPIKey) {
         try checkout.generateCheckoutUrl()
     }
 }
@@ -180,14 +180,4 @@ func explicitEnvironmentOverridesTheKey() throws {
 
     let url = try checkout.generateCheckoutUrl()
     #expect(url.contains("staging.crossmint.com"))
-}
-
-@MainActor
-@Test
-@available(*, deprecated, message: "Covers the deprecated environment overload")
-func explicitEnvironmentAcceptsAKeyItCannotParse() throws {
-    let checkout = CrossmintEmbeddedCheckout(apiKey: "ck_test", environment: .production)
-
-    let url = try checkout.generateCheckoutUrl()
-    #expect(url.contains("www.crossmint.com"))
 }

@@ -164,9 +164,7 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     func generateCheckoutUrl() throws -> String {
-        guard !apiKey.isEmpty else {
-            throw CheckoutError.invalidConfiguration("apiKey is required")
-        }
+        let environment = try resolvedEnvironment()
 
         if lineItems != nil {
             throw CheckoutError.notImplemented(
@@ -178,8 +176,6 @@ public struct CrossmintEmbeddedCheckout: View {
                 "Crossmint Checkout SDK: passing recipient is not yet implemented"
             )
         }
-
-        let environment = try resolvedEnvironment()
 
         var queryItems: [URLQueryItem] = [try HostedPageURL.sdkMetadataItem()]
 
@@ -212,12 +208,7 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     private func resolvedEnvironment() throws -> CheckoutEnvironment {
-        if let explicitEnvironment {
-            return explicitEnvironment
-        }
-        guard let environment = CheckoutEnvironment(apiKey: apiKey) else {
-            throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
-        }
-        return environment
+        let parsed = try CheckoutEnvironment(apiKey: apiKey)
+        return explicitEnvironment ?? parsed
     }
 }

@@ -104,9 +104,7 @@ public struct CrossmintIdentityVerification: View {
     }
 
     func generateVerificationUrl() throws -> String {
-        guard let environment = CheckoutEnvironment(apiKey: apiKey) else {
-            throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
-        }
+        let environment = try CheckoutEnvironment(apiKey: apiKey)
 
         var queryItems: [URLQueryItem] = []
         queryItems.append(URLQueryItem(name: "credentials", value: try credentials.toJSON()))
