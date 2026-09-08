@@ -44,11 +44,11 @@ public struct CrossmintEmbeddedCheckout: View {
     ///   - apiKey: Your client-side API key. The key starts with `ck_`.
     ///   - orderId: The identifier of the order your backend created.
     ///   - clientSecret: The client secret from the same order response.
-    ///   - lineItems: Not supported yet. Pass `nil`.
-    ///   - payment: The payment settings. Pass `nil` to keep the checkout defaults.
-    ///   - recipient: Not supported yet. Pass `nil`.
-    ///   - appearance: The visual customization. Pass `nil` to keep the checkout defaults.
-    ///   - identityVerificationHandling: Set ``IdentityVerificationHandling/external`` to show the verification step yourself.
+    ///   - lineItems: The items of a new order. Not supported yet, so pass `nil`.
+    ///   - payment: The payment settings. A `nil` value keeps the checkout defaults.
+    ///   - recipient: The recipient of a new order. Not supported yet, so pass `nil`.
+    ///   - appearance: The visual customization. A `nil` value keeps the checkout defaults.
+    ///   - identityVerificationHandling: The presentation mode for the identity verification step. Pass ``IdentityVerificationHandling/external`` to show the step yourself.
     ///   - controller: The controller that receives the order updates.
     public init(
         apiKey: String,

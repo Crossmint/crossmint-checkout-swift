@@ -9,7 +9,9 @@ import Foundation
 
 /// An order as the embedded checkout page reports it.
 public struct CheckoutOrder: Decodable, Sendable {
-    /// The identifier of the order. Use it to read the order from your backend.
+    /// The identifier of the order.
+    ///
+    /// Your backend can read the order with this identifier.
     public let orderId: String?
     /// The stage the order is in.
     public let phase: Phase?
@@ -20,7 +22,7 @@ public struct CheckoutOrder: Decodable, Sendable {
 
     /// A stage in the life of an order.
     public enum Phase: String, Decodable, Sendable {
-        /// The checkout calculates the price. The buyer has not paid.
+        /// The checkout calculates the price. No payment has started.
         case quote
         /// The checkout waits for the payment.
         case payment
@@ -53,7 +55,9 @@ public struct CheckoutOrder: Decodable, Sendable {
 
     /// The payment preparation section of an order.
     public struct Preparation: Decodable, Sendable {
-        /// The credentials for identity verification. The value is `nil` when the order does not need one.
+        /// The credentials for identity verification.
+        ///
+        /// The value is `nil` when the order does not need identity verification.
         public let kyc: IdentityVerificationCredentials?
 
         private enum CodingKeys: String, CodingKey {
@@ -71,7 +75,9 @@ public struct CheckoutOrder: Decodable, Sendable {
         }
     }
 
-    /// The credentials for the pending identity verification. The value is `nil` when the order does not wait on one.
+    /// The credentials for the pending identity verification.
+    ///
+    /// The value is `nil` when the order does not wait on identity verification.
     public var identityVerificationCredentials: IdentityVerificationCredentials? {
         payment?.preparation?.kyc
     }

@@ -21,7 +21,7 @@ public struct CheckoutFontStyle: Codable, Sendable {
     /// The CSS `font-weight` value, for example `"600"`.
     public let weight: String?
 
-    /// Creates a font style. Pass `nil` for a value to keep the checkout default.
+    /// Creates a font style.
     public init(family: String? = nil, size: String? = nil, weight: String? = nil) {
         self.family = family
         self.size = size
@@ -39,17 +39,20 @@ public struct CheckoutColorStyle: Codable, Sendable {
     public let text: String?
     /// The background color.
     public let background: String?
-    /// The primary background color. For the checkout as a whole, set
-    /// ``CheckoutVariablesColorStyle/backgroundPrimary`` instead.
+    /// The primary background color.
+    ///
+    /// For the checkout as a whole, use ``CheckoutVariablesColorStyle/backgroundPrimary`` instead.
     public let backgroundPrimary: String?
     /// The border color.
     public let border: String?
     /// The CSS `box-shadow` value, for example `"0 0 0 2px #0066FF"`.
     public let boxShadow: String?
-    /// The placeholder text color. Only inputs read this key.
+    /// The placeholder text color.
+    ///
+    /// Only inputs read this key.
     public let placeholder: String?
 
-    /// Creates a color style. Pass `nil` for a value to keep the checkout default.
+    /// Creates a color style.
     public init(
         text: String? = nil,
         background: String? = nil,
@@ -72,7 +75,7 @@ public struct CheckoutStateStyle: Codable, Sendable {
     /// The colors the element uses while it is in this state.
     public let colors: CheckoutColorStyle?
 
-    /// Creates a state style. Pass `nil` to keep the checkout default for this state.
+    /// Creates a state style.
     public init(colors: CheckoutColorStyle? = nil) {
         self.colors = colors
     }
@@ -83,7 +86,9 @@ public struct CheckoutStateStyle: Codable, Sendable {
 /// The rule for the destination input, where the buyer enters the wallet address or
 /// email that receives the purchase.
 public struct CheckoutDestinationInputRule: Codable, Sendable {
-    /// The CSS `display` value. Set `"hidden"` to remove the input from the page.
+    /// The CSS `display` value of the input.
+    ///
+    /// The value `"hidden"` removes the input from the page.
     public let display: String?
 
     /// Creates a destination input rule.
@@ -94,7 +99,9 @@ public struct CheckoutDestinationInputRule: Codable, Sendable {
 
 /// The rule for the receipt email input.
 public struct CheckoutReceiptEmailInputRule: Codable, Sendable {
-    /// The CSS `display` value. Set `"hidden"` to remove the input from the page.
+    /// The CSS `display` value of the input.
+    ///
+    /// The value `"hidden"` removes the input from the page.
     public let display: String?
 
     /// Creates a receipt email input rule.
@@ -105,8 +112,9 @@ public struct CheckoutReceiptEmailInputRule: Codable, Sendable {
 
 /// The rule for the global message the checkout shows above the payment form.
 public struct CheckoutGlobalMessageRule: Codable, Sendable {
-    /// The CSS `display` value. Set `"hidden"` to remove the message or `"visible"` to
-    /// show it.
+    /// The CSS `display` value of the message.
+    ///
+    /// The value `"hidden"` removes the message. The value `"visible"` shows it.
     public let display: String?
 
     /// Creates a global message rule.
@@ -119,10 +127,12 @@ public struct CheckoutGlobalMessageRule: Codable, Sendable {
 public struct CheckoutLabelRule: Codable, Sendable {
     /// The label font.
     public let font: CheckoutFontStyle?
-    /// The label colors. Labels read the ``CheckoutColorStyle/text`` key.
+    /// The label colors.
+    ///
+    /// Labels read the ``CheckoutColorStyle/text`` key.
     public let colors: CheckoutColorStyle?
 
-    /// Creates a label rule. Pass `nil` for a value to keep the checkout default.
+    /// Creates a label rule.
     public init(font: CheckoutFontStyle? = nil, colors: CheckoutColorStyle? = nil) {
         self.font = font
         self.colors = colors
@@ -142,7 +152,7 @@ public struct CheckoutInputRule: Codable, Sendable {
     /// The input colors while the input has focus.
     public let focus: CheckoutStateStyle?
 
-    /// Creates an input rule. Pass `nil` for a value to keep the checkout default.
+    /// Creates an input rule.
     public init(
         borderRadius: String? = nil,
         font: CheckoutFontStyle? = nil,
@@ -171,7 +181,7 @@ public struct CheckoutTabRule: Codable, Sendable {
     /// The tab colors while the tab is the selected one.
     public let selected: CheckoutStateStyle?
 
-    /// Creates a tab rule. Pass `nil` for a value to keep the checkout default.
+    /// Creates a tab rule.
     public init(
         borderRadius: String? = nil,
         font: CheckoutFontStyle? = nil,
@@ -193,15 +203,16 @@ public struct CheckoutPrimaryButtonRule: Codable, Sendable {
     public let borderRadius: String?
     /// The button font.
     public let font: CheckoutFontStyle?
-    /// The button colors in the rest state. The button reads the
-    /// ``CheckoutColorStyle/text`` and ``CheckoutColorStyle/background`` keys.
+    /// The button colors in the rest state.
+    ///
+    /// The button reads the ``CheckoutColorStyle/text`` and ``CheckoutColorStyle/background`` keys.
     public let colors: CheckoutColorStyle?
     /// The button colors while the pointer is over the button.
     public let hover: CheckoutStateStyle?
     /// The button colors in the disabled state.
     public let disabled: CheckoutStateStyle?
 
-    /// Creates a primary button rule. Pass `nil` for a value to keep the checkout default.
+    /// Creates a primary button rule.
     public init(
         borderRadius: String? = nil,
         font: CheckoutFontStyle? = nil,
@@ -250,7 +261,7 @@ public struct CheckoutAppearanceRules: Codable, Sendable {
         case primaryButton = "PrimaryButton"
     }
 
-    /// Creates the rule set. Pass `nil` for an element to keep the checkout default.
+    /// Creates the rule set.
     public init(
         destinationInput: CheckoutDestinationInputRule? = nil,
         receiptEmailInput: CheckoutReceiptEmailInputRule? = nil,
@@ -291,7 +302,7 @@ public struct CheckoutVariablesColorStyle: Codable, Sendable {
     /// The accent color for highlights, links, and the selected state.
     public let accent: String?
 
-    /// Creates the global colors. Pass `nil` for a value to keep the checkout default.
+    /// Creates the global colors.
     public init(
         textPrimary: String? = nil,
         textSecondary: String? = nil,
@@ -319,7 +330,7 @@ public struct CheckoutAppearanceVariables: Codable, Sendable {
     /// The global colors.
     public let colors: CheckoutVariablesColorStyle?
 
-    /// Creates the variable set. Pass `nil` to keep the checkout default colors.
+    /// Creates the variable set.
     public init(colors: CheckoutVariablesColorStyle? = nil) {
         self.colors = colors
     }
@@ -348,7 +359,7 @@ public struct CheckoutAppearance: Codable, Sendable {
     /// The per-element style overrides.
     public let rules: CheckoutAppearanceRules?
 
-    /// Creates an appearance. Pass `nil` for a part to keep the checkout default.
+    /// Creates an appearance.
     public init(
         variables: CheckoutAppearanceVariables? = nil,
         rules: CheckoutAppearanceRules? = nil

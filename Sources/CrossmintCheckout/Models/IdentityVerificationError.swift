@@ -25,11 +25,13 @@ public struct IdentityVerificationError: Error, LocalizedError, Sendable, Equata
         case unknown
     }
 
-    /// Set `true` when a new attempt can work.
+    /// A Boolean value that shows whether a new attempt can work.
     public let retriable: Bool
     /// The cause of the error.
     public let reason: Reason
-    /// The text that describes the error. The text is for developers, not for the buyer.
+    /// The text that describes the error.
+    ///
+    /// The text is for developers, not for the buyer.
     public let message: String
 
     public var errorDescription: String? { message }

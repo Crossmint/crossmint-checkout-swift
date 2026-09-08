@@ -9,14 +9,14 @@ import Foundation
 
 /// The settings for payment with crypto.
 public struct CheckoutCryptoPayment: Codable, Sendable {
-    /// Set `true` to let the buyer pay with crypto.
+    /// A Boolean value that shows whether the buyer can pay with crypto.
     public let enabled: Bool
     /// The blockchain the checkout selects first, for example `"base"` or `"solana"`.
     public let defaultChain: String?
     /// The currency the checkout selects first, for example `"usdc"`.
     public let defaultCurrency: String?
 
-    /// Creates the crypto payment settings. Pass `nil` for a value to keep the checkout default.
+    /// Creates the crypto payment settings.
     public init(enabled: Bool, defaultChain: String? = nil, defaultCurrency: String? = nil) {
         self.enabled = enabled
         self.defaultChain = defaultChain
@@ -26,16 +26,16 @@ public struct CheckoutCryptoPayment: Codable, Sendable {
 
 /// The fiat payment methods the checkout offers.
 ///
-/// Every method is on by default. Set a method to `false` to remove it from the checkout.
+/// Every method is available by default. A method set to `false` does not appear in the checkout.
 public struct CheckoutAllowedMethods: Codable, Sendable {
-    /// Set `false` to remove Google Pay.
+    /// A Boolean value that shows whether the checkout offers Google Pay.
     public let googlePay: Bool?
-    /// Set `false` to remove Apple Pay.
+    /// A Boolean value that shows whether the checkout offers Apple Pay.
     public let applePay: Bool?
-    /// Set `false` to remove card payment.
+    /// A Boolean value that shows whether the checkout offers card payment.
     public let card: Bool?
 
-    /// Creates the allowed methods. Every method is on unless you set it to `false`.
+    /// Creates the allowed methods. Every method defaults to `true`.
     public init(googlePay: Bool? = true, applePay: Bool? = true, card: Bool? = true) {
         self.googlePay = googlePay
         self.applePay = applePay
@@ -45,14 +45,16 @@ public struct CheckoutAllowedMethods: Codable, Sendable {
 
 /// The settings for payment with fiat currency.
 public struct CheckoutFiatPayment: Codable, Sendable {
-    /// Set `true` to let the buyer pay with fiat currency.
+    /// A Boolean value that shows whether the buyer can pay with fiat currency.
     public let enabled: Bool
     /// The currency the checkout selects first, for example `"usd"` or `"eur"`.
     public let defaultCurrency: String?
-    /// The fiat payment methods the checkout offers. Pass `nil` to offer all of them.
+    /// The fiat payment methods the checkout offers.
+    ///
+    /// A `nil` value offers all methods.
     public let allowedMethods: CheckoutAllowedMethods?
 
-    /// Creates the fiat payment settings. Pass `nil` for a value to keep the checkout default.
+    /// Creates the fiat payment settings.
     public init(
         enabled: Bool,
         defaultCurrency: String? = nil,
@@ -66,8 +68,8 @@ public struct CheckoutFiatPayment: Codable, Sendable {
 
 /// The payment settings for ``CrossmintEmbeddedCheckout``.
 ///
-/// Turn on at least one of ``crypto`` and ``fiat``. The checkout shows a tab for each method
-/// that is on.
+/// At least one of ``crypto`` and ``fiat`` must be enabled. The checkout shows a tab for each
+/// enabled method.
 public struct CheckoutPayment: Codable, Sendable {
     /// A payment method.
     public enum Method: String, Codable, Sendable {
@@ -81,9 +83,13 @@ public struct CheckoutPayment: Codable, Sendable {
     public let crypto: CheckoutCryptoPayment
     /// The settings for payment with fiat currency.
     public let fiat: CheckoutFiatPayment
-    /// The email address that receives the receipt. Pass `nil` to let the buyer enter one.
+    /// The email address that receives the receipt.
+    ///
+    /// A `nil` value lets the buyer enter an address in the checkout.
     public let receiptEmail: String?
-    /// The payment method the checkout selects first. Pass `nil` to let the checkout choose.
+    /// The payment method the checkout selects first.
+    ///
+    /// A `nil` value lets the checkout choose.
     public let defaultMethod: Method?
 
     /// Creates the payment settings.

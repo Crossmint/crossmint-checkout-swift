@@ -27,8 +27,8 @@ public struct CrossmintIdentityVerification: View {
     ///
     /// - Parameters:
     ///   - apiKey: Your client-side API key. The key starts with `ck_`.
-    ///   - credentials: The credentials of the pending verification. Read them from the order.
-    ///   - locale: The language of the verification UI. Pass `nil` to use the default of the hosted page.
+    ///   - credentials: The credentials of the pending verification, from the order.
+    ///   - locale: The language of the verification UI. A `nil` value uses the default of the hosted page.
     public init(
         apiKey: String,
         credentials: IdentityVerificationCredentials,

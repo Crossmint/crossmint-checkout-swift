@@ -15,12 +15,18 @@ import Combine
 /// Call ``clear()`` before you use one controller for a new checkout session.
 @MainActor
 public final class CrossmintCheckoutController: ObservableObject {
-    /// The order in its latest state. The value is `nil` before the first order update.
+    /// The order in its latest state.
+    ///
+    /// The value is `nil` before the first order update.
     @Published public private(set) var order: CheckoutOrder?
-    /// The secret that authorizes reads of the order. The value stays after an update that omits it.
+    /// The secret that authorizes reads of the order.
+    ///
+    /// The value stays when a later update omits the secret.
     @Published public private(set) var orderClientSecret: String?
 
-    /// The credentials for the pending identity verification. The value is `nil` when the order does not wait on one.
+    /// The credentials for the pending identity verification.
+    ///
+    /// The value is `nil` when the order does not wait on identity verification.
     public var identityVerificationCredentials: IdentityVerificationCredentials? {
         order?.identityVerificationCredentials
     }
