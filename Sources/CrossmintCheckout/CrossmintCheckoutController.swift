@@ -21,7 +21,8 @@ public final class CrossmintCheckoutController: ObservableObject {
     @Published public private(set) var order: CheckoutOrder?
     /// The secret that authorizes reads of the order.
     ///
-    /// The value stays when a later update omits the secret.
+    /// The checkout page sends the secret with the first order update. Later updates can omit
+    /// it, and the controller keeps the last secret it received.
     @Published public private(set) var orderClientSecret: String?
 
     /// The credentials for the pending identity verification.
