@@ -27,21 +27,21 @@ public enum CheckoutEnvironment: Sendable {
             )
         }
         let tokens = apiKey.split(separator: "_")
-        guard tokens.count >= 3, tokens[0] == "ck" else {
-            throw Self.malformedKeyError
+        guard tokens.count >= 3, tokens[0] == "ck", let environment = Self(token: tokens[1]) else {
+            throw CheckoutError.invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
         }
-        switch tokens[1] {
+        self = environment
+    }
+
+    private init?(token: Substring) {
+        switch token {
         case "production":
             self = .production
         case "staging", "development":
             self = .staging
         default:
-            throw Self.malformedKeyError
+            return nil
         }
-    }
-
-    private static var malformedKeyError: CheckoutError {
-        .invalidConfiguration("apiKey must be a Crossmint client key (ck_<environment>_...)")
     }
 
     var crossmintHost: String {
