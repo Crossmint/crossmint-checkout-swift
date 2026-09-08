@@ -164,6 +164,8 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     func generateCheckoutUrl() throws -> String {
+        let environment = try resolvedEnvironment()
+
         if lineItems != nil {
             throw CheckoutError.notImplemented(
                 "Crossmint Checkout SDK: passing lineItems is not yet implemented"
@@ -174,8 +176,6 @@ public struct CrossmintEmbeddedCheckout: View {
                 "Crossmint Checkout SDK: passing recipient is not yet implemented"
             )
         }
-
-        let environment = try resolvedEnvironment()
 
         var queryItems: [URLQueryItem] = [try HostedPageURL.sdkMetadataItem()]
 

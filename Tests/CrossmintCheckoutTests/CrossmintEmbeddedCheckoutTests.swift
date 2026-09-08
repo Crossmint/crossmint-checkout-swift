@@ -44,7 +44,7 @@ import Testing
 @Test func checkoutMalformedApiKeyThrows() throws {
     let checkout = CrossmintEmbeddedCheckout(apiKey: "not-a-crossmint-key")
 
-    #expect(throws: CheckoutError.self) {
+    #expect(throws: CheckoutError.malformedAPIKey) {
         try checkout.generateCheckoutUrl()
     }
 }
@@ -82,7 +82,7 @@ import Testing
         clientSecret: "secret-456"
     )
 
-    #expect(throws: CheckoutError.self) {
+    #expect(throws: CheckoutError.missingAPIKey) {
         try checkout.generateCheckoutUrl()
     }
 }
