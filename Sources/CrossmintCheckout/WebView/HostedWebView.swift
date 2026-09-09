@@ -12,7 +12,7 @@ struct HostedWebView: UIViewRepresentable {
     let url: String
     let navigationPolicy: NavigationPolicy
     var allowsMediaCapture = false
-    var isScrollEnabled = false
+    var isScrollEnabled = true
     var injectsViewportScript = true
     var onMessage: @MainActor (Any, BridgeResponder) -> Void = { _, _ in }
     var onLoadFailure: ((String) -> Void)?
@@ -28,9 +28,8 @@ struct HostedWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView(frame: .zero, configuration: makeConfiguration(coordinator: context.coordinator))
         webView.scrollView.isScrollEnabled = isScrollEnabled
-        webView.scrollView.bounces = false
-        webView.scrollView.alwaysBounceVertical = false
         webView.scrollView.alwaysBounceHorizontal = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .always
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.navigationDelegate = context.coordinator
