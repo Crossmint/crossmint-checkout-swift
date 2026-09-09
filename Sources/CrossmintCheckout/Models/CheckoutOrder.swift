@@ -9,17 +9,26 @@ import Foundation
 
 /// An order as the embedded checkout page reports it.
 public struct CheckoutOrder: Decodable, Sendable {
+    /// The identifier of the order.
+    ///
+    /// Your backend can read the order with this identifier.
     public let orderId: String?
+    /// The stage the order is in.
     public let phase: Phase?
+    /// The payment section of the order.
     public let payment: Payment?
 
     let clientSecret: String?
 
     /// A stage in the life of an order.
     public enum Phase: String, Decodable, Sendable {
+        /// The checkout calculates the price. No payment has started.
         case quote
+        /// The checkout waits for the payment.
         case payment
+        /// The payment is complete. Crossmint delivers the items.
         case delivery
+        /// The delivery is complete.
         case completed
     }
 
@@ -27,7 +36,9 @@ public struct CheckoutOrder: Decodable, Sendable {
     ///
     /// The `status` value `requires-kyc` means the order waits on identity verification.
     public struct Payment: Decodable, Sendable {
+        /// The payment status as the checkout page reports it, for example `"requires-kyc"`.
         public let status: String?
+        /// The steps the buyer must complete before payment.
         public let preparation: Preparation?
 
         private enum CodingKeys: String, CodingKey {
@@ -44,6 +55,9 @@ public struct CheckoutOrder: Decodable, Sendable {
 
     /// The payment preparation section of an order.
     public struct Preparation: Decodable, Sendable {
+        /// The credentials for identity verification.
+        ///
+        /// The value is `nil` when the order does not need identity verification.
         public let kyc: IdentityVerificationCredentials?
 
         private enum CodingKeys: String, CodingKey {
@@ -61,7 +75,9 @@ public struct CheckoutOrder: Decodable, Sendable {
         }
     }
 
-    /// The credentials for the pending identity verification, when the order waits on one.
+    /// The credentials for the pending identity verification.
+    ///
+    /// The value is `nil` when the order does not wait on identity verification.
     public var identityVerificationCredentials: IdentityVerificationCredentials? {
         payment?.preparation?.kyc
     }
