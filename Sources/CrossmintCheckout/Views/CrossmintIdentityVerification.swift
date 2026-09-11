@@ -29,11 +29,14 @@ public struct CrossmintIdentityVerification: View {
     ///   - apiKey: Your client-side API key. The key starts with `ck_`.
     ///   - credentials: The credentials of the pending verification, from the order.
     ///   - locale: The language of the verification UI. A `nil` value uses the default of the hosted page.
+    ///   - consoleLogLevel: The minimum level of the SDK messages that reach the system console.
     public init(
         apiKey: String,
         credentials: IdentityVerificationCredentials,
-        locale: CheckoutLocale? = nil
+        locale: CheckoutLocale? = nil,
+        consoleLogLevel: CheckoutLogLevel = .error
     ) {
+        Logger.level = consoleLogLevel
         self.apiKey = apiKey
         self.credentials = credentials
         self.locale = locale
@@ -111,6 +114,7 @@ public struct CrossmintIdentityVerification: View {
 
     func generateVerificationUrl() throws -> String {
         let environment = try CheckoutEnvironment(apiKey: apiKey)
+        DataDogConfig.configure(for: environment)
 
         var queryItems: [URLQueryItem] = []
         queryItems.append(URLQueryItem(name: "credentials", value: try credentials.toJSON()))

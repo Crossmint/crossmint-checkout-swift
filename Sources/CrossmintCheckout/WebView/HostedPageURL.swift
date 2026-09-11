@@ -10,7 +10,7 @@ import Foundation
 enum HostedPageURL {
     static func sdkMetadataItem() throws -> URLQueryItem {
         let sdkMetadata: [String: String] = [
-            "name": "@crossmint/checkout-swift",
+            "name": SDKVersion.name,
             "version": SDKVersion.version
         ]
         return URLQueryItem(name: "sdkMetadata", value: try sdkMetadata.toJSON())

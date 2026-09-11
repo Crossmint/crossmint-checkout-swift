@@ -6,6 +6,8 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+Examples/CheckoutDemo/Config/Secrets.xcconfig
+.claude/
 
 # Generated SDK reference docs
 /sdk-reference
