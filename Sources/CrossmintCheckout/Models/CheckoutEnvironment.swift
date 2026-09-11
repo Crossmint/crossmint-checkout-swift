@@ -46,6 +46,13 @@ public enum CheckoutEnvironment: Sendable {
         }
     }
 
+    var datadogEnvironment: String {
+        switch self {
+        case .staging: "staging"
+        case .production: "production"
+        }
+    }
+
     var crossmintHost: String {
         switch self {
         case .staging: "staging.crossmint.com"
