@@ -15,23 +15,17 @@ final class OSLoggerProvider: LoggerProvider {
         self.osLogger = OSLog(subsystem: "com.crossmint.CrossmintCheckout", category: category)
     }
 
-    func debug(_ message: String, attributes: [String: any Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.debug.rawValue else { return }
-        os_log(.debug, log: osLogger, "%{public}@", LogFormatting.format(message, attributes: attributes))
+    func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: any Encodable]?) {
+        guard Logger.level.rawValue <= level.rawValue else { return }
+        os_log(Self.type(for: level), log: osLogger, "%{public}@", LogFormatting.format(message, attributes: attributes))
     }
 
-    func error(_ message: String, attributes: [String: any Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.error.rawValue else { return }
-        os_log(.error, log: osLogger, "%{public}@", LogFormatting.format(message, attributes: attributes))
-    }
-
-    func info(_ message: String, attributes: [String: any Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.info.rawValue else { return }
-        os_log(.info, log: osLogger, "%{public}@", LogFormatting.format(message, attributes: attributes))
-    }
-
-    func warning(_ message: String, attributes: [String: any Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.warning.rawValue else { return }
-        os_log(.default, log: osLogger, "%{public}@", LogFormatting.format(message, attributes: attributes))
+    private static func type(for level: CheckoutLogLevel) -> OSLogType {
+        switch level {
+        case .debug: .debug
+        case .info: .info
+        case .warning: .default
+        case .error, .silent: .error
+        }
     }
 }

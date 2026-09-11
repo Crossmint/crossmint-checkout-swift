@@ -6,9 +6,7 @@
 //
 
 import Foundation
-#if canImport(UIKit)
 import UIKit
-#endif
 
 actor DataDogLoggerProvider: LoggerProvider {
     private let batchSize = 10
@@ -53,31 +51,10 @@ actor DataDogLoggerProvider: LoggerProvider {
         self.deviceInfo = await Self.captureTask.value
     }
 
-    nonisolated func debug(_ message: String, attributes: [String: Encodable]?) {
+    nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: Encodable]?) {
         let attrs = UnsafeSendableAttributes(value: attributes)
         Task.detached { [weak self] in
-            await self?.write(level: .debug, message: message, attributes: attrs.value)
-        }
-    }
-
-    nonisolated func error(_ message: String, attributes: [String: Encodable]?) {
-        let attrs = UnsafeSendableAttributes(value: attributes)
-        Task.detached { [weak self] in
-            await self?.write(level: .error, message: message, attributes: attrs.value)
-        }
-    }
-
-    nonisolated func info(_ message: String, attributes: [String: Encodable]?) {
-        let attrs = UnsafeSendableAttributes(value: attributes)
-        Task.detached { [weak self] in
-            await self?.write(level: .info, message: message, attributes: attrs.value)
-        }
-    }
-
-    nonisolated func warning(_ message: String, attributes: [String: Encodable]?) {
-        let attrs = UnsafeSendableAttributes(value: attributes)
-        Task.detached { [weak self] in
-            await self?.write(level: .warning, message: message, attributes: attrs.value)
+            await self?.write(level: level, message: message, attributes: attrs.value)
         }
     }
 
@@ -182,12 +159,6 @@ actor DataDogLoggerProvider: LoggerProvider {
             "status": mapLevelToStatus(entry.level)
         ]
 
-        var client: [String: Any] = ["type": info.networkConnectionType]
-        if let cellularTech = info.cellularTechnology {
-            client["cellular_technology"] = cellularTech
-        }
-        attributes["network"] = ["client": client]
-
         for (key, value) in entry.context {
             attributes[key] = value
         }
@@ -237,7 +208,6 @@ actor DataDogLoggerProvider: LoggerProvider {
     }
 
     private static func setupLifecycleObservers(provider: DataDogLoggerProvider) {
-        #if canImport(UIKit)
         NotificationCenter.default.addObserver(
             forName: UIApplication.willResignActiveNotification,
             object: nil,
@@ -253,6 +223,5 @@ actor DataDogLoggerProvider: LoggerProvider {
         ) { _ in
             Task { await provider.flush() }
         }
-        #endif
     }
 }

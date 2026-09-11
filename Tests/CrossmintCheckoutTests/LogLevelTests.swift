@@ -10,26 +10,11 @@ import Testing
 @testable import CrossmintCheckout
 
 private final class LevelRespectingSpy: LoggerProvider, @unchecked Sendable {
-    var calls: [String] = []
+    var calls: [CheckoutLogLevel] = []
 
-    func debug(_ message: String, attributes: [String: Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.debug.rawValue else { return }
-        calls.append("debug")
-    }
-
-    func info(_ message: String, attributes: [String: Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.info.rawValue else { return }
-        calls.append("info")
-    }
-
-    func warning(_ message: String, attributes: [String: Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.warning.rawValue else { return }
-        calls.append("warning")
-    }
-
-    func error(_ message: String, attributes: [String: Encodable]?) {
-        guard Logger.level.rawValue <= CheckoutLogLevel.error.rawValue else { return }
-        calls.append("error")
+    func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: Encodable]?) {
+        guard Logger.level.rawValue <= level.rawValue else { return }
+        calls.append(level)
     }
 }
 
@@ -52,7 +37,7 @@ struct LogLevelTests {
         logger.warning("w")
         logger.error("e")
 
-        #expect(spy.calls == ["debug", "info", "warning", "error"])
+        #expect(spy.calls == [.debug, .info, .warning, .error])
     }
 
     @Test func consoleProvidersRespectLevel() {
@@ -68,7 +53,7 @@ struct LogLevelTests {
         logger.warning("w")
         logger.error("e")
 
-        #expect(spy.calls == ["error"])
+        #expect(spy.calls == [.error])
     }
 
     @MainActor

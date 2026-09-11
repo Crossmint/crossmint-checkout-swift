@@ -26,30 +26,26 @@ struct Logger: Sendable {
     }
 
     func debug(_ message: String, attributes: [String: Encodable]? = nil) {
-        forward(message, attributes) { $0.debug($1, attributes: $2) }
-    }
-
-    func error(_ message: String, attributes: [String: Encodable]? = nil) {
-        forward(message, attributes) { $0.error($1, attributes: $2) }
+        log(.debug, message, attributes)
     }
 
     func info(_ message: String, attributes: [String: Encodable]? = nil) {
-        forward(message, attributes) { $0.info($1, attributes: $2) }
+        log(.info, message, attributes)
     }
 
     func warning(_ message: String, attributes: [String: Encodable]? = nil) {
-        forward(message, attributes) { $0.warning($1, attributes: $2) }
+        log(.warning, message, attributes)
     }
 
-    private func forward(
-        _ message: String,
-        _ attributes: [String: Encodable]?,
-        to log: (LoggerProvider, String, [String: Encodable]?) -> Void
-    ) {
+    func error(_ message: String, attributes: [String: Encodable]? = nil) {
+        log(.error, message, attributes)
+    }
+
+    private func log(_ level: CheckoutLogLevel, _ message: String, _ attributes: [String: Encodable]?) {
         let message = CredentialScrubber.scrub(message)
         let attributes = CredentialScrubber.scrub(attributes)
         for provider in providers {
-            log(provider, message, attributes)
+            provider.log(level, message, attributes: attributes)
         }
     }
 
