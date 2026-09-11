@@ -67,6 +67,7 @@ struct CheckoutView: View {
 | `recipient` | `CheckoutRecipient?` | No | Recipient configuration (not yet implemented) |
 | `identityVerificationHandling` | `IdentityVerificationHandling?` | No | `.external` renders no KYC step inside checkout; you present it yourself (see below) |
 | `controller` | `CrossmintCheckoutController?` | No | Observable order state (order, client secret, KYC credentials) |
+| `consoleLogLevel` | `CheckoutLogLevel` | No | Minimum level of SDK messages written to the system console. Defaults to `.error` |
 
 ### Payment Configuration
 
@@ -186,6 +187,7 @@ Checkout does not wait for a signal from your component. It polls the order unti
 | `apiKey` | `String` | Yes | Your client-side API key (`ck_...`) |
 | `credentials` | `IdentityVerificationCredentials` | Yes | From the controller or your backend's order response |
 | `locale` | `CheckoutLocale?` | No | UI language of the verification flow |
+| `consoleLogLevel` | `CheckoutLogLevel` | No | Minimum level of SDK messages written to the system console. Defaults to `.error` |
 
 ### Event handlers
 
