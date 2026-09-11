@@ -234,7 +234,7 @@ public struct CrossmintEmbeddedCheckout: View {
     private func resolvedEnvironment() throws -> CheckoutEnvironment {
         let parsed = try CheckoutEnvironment(apiKey: apiKey)
         let environment = explicitEnvironment ?? parsed
-        DataDogConfig.configure(environment: environment.datadogEnvironment)
+        DataDogConfig.configure(for: environment)
         return environment
     }
 }

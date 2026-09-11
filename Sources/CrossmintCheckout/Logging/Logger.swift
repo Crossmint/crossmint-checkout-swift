@@ -7,51 +7,65 @@
 
 import Foundation
 
+protocol LoggerProvider: Sendable {
+    nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?)
+}
+
+final class LockedValue<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Value
+
+    init(_ value: Value) {
+        stored = value
+    }
+
+    var value: Value {
+        get { lock.withLock { stored } }
+        set { lock.withLock { stored = newValue } }
+    }
+}
+
 struct Logger: Sendable {
-    private let providers: [LoggerProvider]
-    nonisolated(unsafe) static var level: CheckoutLogLevel = .error
+    private static let levelBox = LockedValue(CheckoutLogLevel.error)
+
+    static var level: CheckoutLogLevel {
+        get { levelBox.value }
+        set { levelBox.value = newValue }
+    }
 
     static let checkout = Logger(category: "checkout")
-    static let web = Logger(category: "web")
+
+    private let providers: [LoggerProvider]
 
     init(category: String) {
-        providers = [
-            OSLoggerProvider(category: category),
-            DataDogLoggerProvider(service: category, clientToken: DataDogConfig.clientToken)
-        ]
+        self.init(providers: [OSLoggerProvider(category: category), DataDogLoggerProvider(service: category)])
     }
 
-    init(testProviders: [LoggerProvider]) {
-        self.providers = testProviders
+    init(providers: [LoggerProvider]) {
+        self.providers = providers
     }
 
-    func debug(_ message: String, attributes: [String: Encodable]? = nil) {
+    func debug(_ message: String, attributes: [String: String]? = nil) {
         log(.debug, message, attributes)
     }
 
-    func info(_ message: String, attributes: [String: Encodable]? = nil) {
+    func info(_ message: String, attributes: [String: String]? = nil) {
         log(.info, message, attributes)
     }
 
-    func warning(_ message: String, attributes: [String: Encodable]? = nil) {
+    func warning(_ message: String, attributes: [String: String]? = nil) {
         log(.warning, message, attributes)
     }
 
-    func error(_ message: String, attributes: [String: Encodable]? = nil) {
+    func error(_ message: String, attributes: [String: String]? = nil) {
         log(.error, message, attributes)
     }
 
-    private func log(_ level: CheckoutLogLevel, _ message: String, _ attributes: [String: Encodable]?) {
+    private func log(_ level: CheckoutLogLevel, _ message: String, _ attributes: [String: String]?) {
         let message = CredentialScrubber.scrub(message)
-        let attributes = CredentialScrubber.scrub(attributes)
+        let attributes = attributes?.mapValues(CredentialScrubber.scrub)
         for provider in providers {
             provider.log(level, message, attributes: attributes)
-        }
-    }
-
-    func flush() async {
-        for provider in providers {
-            await provider.flush()
         }
     }
 }

@@ -11,9 +11,9 @@ import Foundation
 final class MockLoggerProvider: LoggerProvider, @unchecked Sendable {
     var calls: [CheckoutLogLevel] = []
     var lastMessage: String?
-    var lastAttributes: [String: Encodable]?
+    var lastAttributes: [String: String]?
 
-    func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: Encodable]?) {
+    func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?) {
         calls.append(level)
         lastMessage = message
         lastAttributes = attributes

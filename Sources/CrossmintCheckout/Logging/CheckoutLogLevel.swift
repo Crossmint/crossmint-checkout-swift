@@ -22,3 +22,9 @@ public enum CheckoutLogLevel: Int, Sendable {
     /// No console output.
     case silent
 }
+
+extension CheckoutLogLevel {
+    func includes(_ level: CheckoutLogLevel) -> Bool {
+        rawValue <= level.rawValue
+    }
+}

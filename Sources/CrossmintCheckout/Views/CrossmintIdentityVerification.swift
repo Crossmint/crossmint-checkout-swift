@@ -114,7 +114,7 @@ public struct CrossmintIdentityVerification: View {
 
     func generateVerificationUrl() throws -> String {
         let environment = try CheckoutEnvironment(apiKey: apiKey)
-        DataDogConfig.configure(environment: environment.datadogEnvironment)
+        DataDogConfig.configure(for: environment)
 
         var queryItems: [URLQueryItem] = []
         queryItems.append(URLQueryItem(name: "credentials", value: try credentials.toJSON()))

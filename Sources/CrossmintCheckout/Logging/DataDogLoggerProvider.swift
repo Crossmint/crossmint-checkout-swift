@@ -8,220 +8,168 @@
 import Foundation
 import UIKit
 
-actor DataDogLoggerProvider: LoggerProvider {
-    private let batchSize = 10
-    private let batchTimeoutSeconds: TimeInterval = 5.0
+enum DataDogConfig {
+    static let clientToken = "pub946d87ea0c2cc02431c15e9446f776fc"
 
-    private let service: String
-    private let intakeUrl: String
-    private let serviceName = "crossmint-ios-sdk"
+    private static let environmentBox = LockedValue("production")
 
-    private var batchQueue: [LogEntry] = []
-    private var batchTask: Task<Void, Never>?
-    private let sessionId: String
-    private var deviceInfo: DeviceInfoCache?
-
-    private static let captureTask: Task<DeviceInfoCache, Never> = Task {
-        await DeviceInfoCache.capture()
+    static var environment: String {
+        environmentBox.value
     }
 
-    private let iso8601Formatter: ISO8601DateFormatter = {
+    static func configure(for environment: CheckoutEnvironment) {
+        environmentBox.value = switch environment {
+        case .staging: "staging"
+        case .production: "production"
+        }
+    }
+}
+
+private struct LogEntry {
+    let level: CheckoutLogLevel
+    let message: String
+    let timestamp: String
+    let attributes: [String: String]
+
+    var status: String {
+        switch level {
+        case .debug, .info: "info"
+        case .warning: "warn"
+        case .error: "error"
+        case .silent: "none"
+        }
+    }
+}
+
+private struct DeviceInfo: Sendable {
+    var model = "unknown"
+    var name = "unknown"
+    var osName = "unknown"
+    var osVersion = "unknown"
+    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    let appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+
+    @MainActor
+    static func capture() -> DeviceInfo {
+        let device = UIDevice.current
+        return DeviceInfo(model: device.model, name: device.name, osName: device.systemName, osVersion: device.systemVersion)
+    }
+}
+
+actor DataDogLoggerProvider: LoggerProvider {
+    private static let serviceName = "crossmint-ios-sdk"
+    private static let batchSize = 10
+    private static let batchTimeoutNanoseconds: UInt64 = 5_000_000_000
+
+    private let service: String
+    private let intakeUrl: URL?
+    private let sessionId = UUID().uuidString
+    private var queue: [LogEntry] = []
+    private var flushTask: Task<Void, Never>?
+    private var device = DeviceInfo()
+
+    private let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
     }()
 
-    init(service: String, clientToken: String) {
+    init(service: String, clientToken: String = DataDogConfig.clientToken) {
         self.service = service
-        self.sessionId = Self.generateSessionId()
-        self.deviceInfo = nil
+        let intake = "https://http-intake.logs.datadoghq.com/v1/input/\(clientToken)"
+        let encoded = intake.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? intake
+        self.intakeUrl = URL(string: "https://telemetry.crossmint.com/dd?ddforward=\(encoded)")
 
-        let datadogUrl = "https://http-intake.logs.datadoghq.com/v1/input/\(clientToken)"
-        let encodedUrl = datadogUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? datadogUrl
-        self.intakeUrl = "https://telemetry.crossmint.com/dd?ddforward=\(encodedUrl)"
+        Self.observeLifecycle(of: self)
+        Task { await self.captureDevice() }
+    }
 
-        Self.setupLifecycleObservers(provider: self)
+    private func captureDevice() async {
+        device = await DeviceInfo.capture()
+    }
 
-        Task {
-            await self.captureDeviceInfo()
+    nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?) {
+        let date = Date()
+        Task { [weak self] in
+            await self?.enqueue(level: level, message: message, attributes: attributes ?? [:], date: date)
         }
     }
 
-    private func captureDeviceInfo() async {
-        self.deviceInfo = await Self.captureTask.value
-    }
+    private func enqueue(level: CheckoutLogLevel, message: String, attributes: [String: String], date: Date) {
+        queue.append(LogEntry(level: level, message: message, timestamp: dateFormatter.string(from: date), attributes: attributes))
 
-    nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: Encodable]?) {
-        let attrs = UnsafeSendableAttributes(value: attributes)
-        Task.detached { [weak self] in
-            await self?.write(level: level, message: message, attributes: attrs.value)
-        }
-    }
-
-    private func write(level: CheckoutLogLevel, message: String, attributes: [String: Encodable]?) {
-        let entry = LogEntry(
-            level: level,
-            message: LogFormatting.format(message, attributes: attributes),
-            timestamp: iso8601Formatter.string(from: Date()),
-            context: attributes ?? [:]
-        )
-
-        batchQueue.append(entry)
-
-        if batchQueue.count >= batchSize {
-            flush()
-        } else {
-            scheduleBatchTimeout()
-        }
-    }
-
-    private func scheduleBatchTimeout() {
-        batchTask?.cancel()
-
-        let timeout = batchTimeoutSeconds
-        batchTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            await self?.flush()
-        }
-    }
-
-    func flush() {
-        batchTask?.cancel()
-        batchTask = nil
-
-        guard !batchQueue.isEmpty else { return }
-
-        let batch = batchQueue
-        batchQueue.removeAll()
-
-        Task {
-            await sendBatch(batch)
-        }
-    }
-
-    private func sendBatch(_ batch: [LogEntry]) async {
-        let logs = batch.map { entry in
-            formatLogForDataDog(entry)
-        }
-
-        do {
-            guard let url = URL(string: intakeUrl) else {
-                print("[CrossmintCheckout Logger] Invalid intake URL")
-                return
+        if queue.count >= Self.batchSize {
+            Task { await flush() }
+        } else if flushTask == nil {
+            flushTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: Self.batchTimeoutNanoseconds)
+                guard !Task.isCancelled else { return }
+                await self?.flush()
             }
+        }
+    }
 
-            var request = URLRequest(url: url)
+    func flush() async {
+        flushTask?.cancel()
+        flushTask = nil
+        guard !queue.isEmpty else { return }
+
+        let batch = queue
+        queue.removeAll()
+        await send(batch)
+    }
+
+    private func send(_ batch: [LogEntry]) async {
+        guard let intakeUrl else { return }
+        do {
+            var request = URLRequest(url: intakeUrl)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: logs)
+            request.httpBody = try JSONSerialization.data(withJSONObject: batch.map(payload))
 
             let (_, response) = try await URLSession.shared.data(for: request)
-
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
-                print("[CrossmintCheckout Logger] DataDog proxy returned error: \(httpResponse.statusCode)")
+            if let status = (response as? HTTPURLResponse)?.statusCode, status >= 400 {
+                print("[CrossmintCheckout Logger] DataDog proxy returned \(status)")
             }
         } catch {
-            print("[CrossmintCheckout Logger] Error sending logs to DataDog: \(error)")
+            print("[CrossmintCheckout Logger] Failed to send logs: \(error)")
         }
     }
 
-    private func formatLogForDataDog(_ entry: LogEntry) -> [String: Any] {
-        let bundleId = Bundle.main.bundleIdentifier ?? "unknown"
-        let info = deviceInfo ?? .unknown
-
+    private func payload(for entry: LogEntry) -> [String: Any] {
         var attributes: [String: Any] = [
             "date": entry.timestamp,
-            "os": [
-                "build": info.osBuild,
-                "name": info.osName,
-                "version": info.osVersion
-            ],
-            "build_version": info.appBuild,
-            "service": serviceName,
-            "logger": [
-                "thread_name": Self.getThreadName(),
-                "name": service,
-                "version": SDKVersion.version
-            ],
-            "version": info.appVersion,
-            "platform": "ios",
+            "status": entry.status,
+            "service": Self.serviceName,
             "sdk_name": SDKVersion.name,
             "sdk_version": SDKVersion.version,
-            "_dd": [
-                "device": [
-                    "name": info.deviceName,
-                    "model": info.model,
-                    "brand": "Apple",
-                    "architecture": info.architecture
-                ]
-            ],
-            "status": mapLevelToStatus(entry.level)
+            "logger": ["name": service, "version": SDKVersion.version],
+            "platform": "ios",
+            "version": device.appVersion,
+            "build_version": device.appBuild,
+            "os": ["name": device.osName, "version": device.osVersion],
+            "_dd": ["device": ["name": device.name, "model": device.model, "brand": "Apple"]]
         ]
-
-        for (key, value) in entry.context {
+        for (key, value) in entry.attributes {
             attributes[key] = value
         }
 
         return [
             "timestamp": entry.timestamp,
-            "tags": [
-                "env:\(DataDogConfig.environment)",
-                "version:\(info.appVersion)",
-                "source:ios"
-            ],
-            "service": serviceName,
+            "tags": ["env:\(DataDogConfig.environment)", "version:\(device.appVersion)", "source:ios"],
+            "service": Self.serviceName,
             "message": entry.message,
-            "hostname": bundleId,
+            "hostname": Bundle.main.bundleIdentifier ?? "unknown",
             "dd-session_id": sessionId,
             "attributes": attributes
         ]
     }
 
-    private static func getThreadName() -> String {
-        if Thread.isMainThread {
-            return "main"
-        }
-        if let name = Thread.current.name, !name.isEmpty {
-            return name
-        }
-        return "background"
-    }
-
-    private func mapLevelToStatus(_ level: CheckoutLogLevel) -> String {
-        switch level {
-        case .debug, .info:
-            "info"
-        case .warning:
-            "warn"
-        case .error:
-            "error"
-        case .silent:
-            "none"
-        }
-    }
-
-    private static func generateSessionId() -> String {
-        var bytes = [UInt8](repeating: 0, count: 8)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        return bytes.map { String(format: "%02x", $0) }.joined()
-    }
-
-    private static func setupLifecycleObservers(provider: DataDogLoggerProvider) {
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willResignActiveNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { await provider.flush() }
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willTerminateNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { await provider.flush() }
+    private static func observeLifecycle(of provider: DataDogLoggerProvider) {
+        for name in [UIApplication.willResignActiveNotification, UIApplication.willTerminateNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak provider] _ in
+                Task { await provider?.flush() }
+            }
         }
     }
 }

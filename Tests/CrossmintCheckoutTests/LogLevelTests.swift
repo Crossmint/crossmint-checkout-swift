@@ -9,29 +9,16 @@ import Foundation
 import Testing
 @testable import CrossmintCheckout
 
-private final class LevelRespectingSpy: LoggerProvider, @unchecked Sendable {
-    var calls: [CheckoutLogLevel] = []
-
-    func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: Encodable]?) {
-        guard Logger.level.rawValue <= level.rawValue else { return }
-        calls.append(level)
-    }
-}
-
+@MainActor
 @Suite(.serialized)
 struct LogLevelTests {
-    @Test func silentIsAboveError() {
-        #expect(CheckoutLogLevel.silent.rawValue > CheckoutLogLevel.error.rawValue)
-    }
-
     @Test func remoteProvidersReceiveEveryLevel() {
         let saved = Logger.level
         defer { Logger.level = saved }
 
         Logger.level = .silent
         let spy = MockLoggerProvider()
-        let logger = Logger(testProviders: [spy])
-
+        let logger = Logger(providers: [spy])
         logger.debug("d")
         logger.info("i")
         logger.warning("w")
@@ -40,23 +27,17 @@ struct LogLevelTests {
         #expect(spy.calls == [.debug, .info, .warning, .error])
     }
 
-    @Test func consoleProvidersRespectLevel() {
-        let saved = Logger.level
-        defer { Logger.level = saved }
+    @Test(arguments: [
+        (CheckoutLogLevel.warning, [CheckoutLogLevel.warning, .error]),
+        (.error, [.error]),
+        (.silent, [])
+    ])
+    func consoleThresholdIncludesLevelsAtOrAbove(threshold: CheckoutLogLevel, expected: [CheckoutLogLevel]) {
+        let included = [CheckoutLogLevel.debug, .info, .warning, .error].filter(threshold.includes)
 
-        Logger.level = .error
-        let spy = LevelRespectingSpy()
-        let logger = Logger(testProviders: [spy])
-
-        logger.debug("d")
-        logger.info("i")
-        logger.warning("w")
-        logger.error("e")
-
-        #expect(spy.calls == [.error])
+        #expect(included == expected)
     }
 
-    @MainActor
     @Test func viewInitializersSetTheConsoleLevel() {
         let saved = Logger.level
         defer { Logger.level = saved }
@@ -70,21 +51,5 @@ struct LogLevelTests {
 
         _ = CrossmintEmbeddedCheckout(apiKey: "ck_staging_test", orderId: "order-1")
         #expect(Logger.level == .error)
-    }
-
-    @Test func consoleProvidersEmitNothingWhenSilent() {
-        let saved = Logger.level
-        defer { Logger.level = saved }
-
-        Logger.level = .silent
-        let spy = LevelRespectingSpy()
-        let logger = Logger(testProviders: [spy])
-
-        logger.debug("d")
-        logger.info("i")
-        logger.warning("w")
-        logger.error("e")
-
-        #expect(spy.calls.isEmpty)
     }
 }
