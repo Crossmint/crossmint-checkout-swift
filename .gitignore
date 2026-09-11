@@ -8,3 +8,6 @@ DerivedData/
 .netrc
 Examples/CheckoutDemo/Config/Secrets.xcconfig
 .claude/
+
+# Generated SDK reference docs
+/sdk-reference
