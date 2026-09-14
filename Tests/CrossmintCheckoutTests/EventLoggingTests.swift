@@ -48,6 +48,49 @@ final class EventLoggingTests {
         #expect(spy.entries.count == 1)
     }
 
+    @Test func loadSuccessLogsTheDuration() {
+        let coordinator = makeCoordinator()
+        let webView = WKWebView()
+        coordinator.load("https://staging.crossmint.com/sdk/unstable/identity-verification", in: webView)
+        coordinator.webView(webView, didFinish: nil)
+
+        let entry = spy.entry(LogEvents.webviewLoadSuccess)
+        #expect(entry?.level == .info)
+        #expect(entry?.attributes?["durationMs"].flatMap(Int.init) != nil)
+    }
+
+    @Test func terminatedContentProcessLogsAnError() {
+        makeCoordinator().webViewWebContentProcessDidTerminate(WKWebView())
+
+        #expect(spy.entry(LogEvents.webviewProcessTerminated)?.level == .error)
+    }
+
+    @Test func orderUpdateLogsTheOrderSummary() {
+        let checkout = CrossmintEmbeddedCheckout(apiKey: "ck_staging_test")
+        checkout.handle(#"{"event":"order:updated","data":{"order":{"orderId":"o-2","phase":"payment","payment":{"status":"requires-kyc"}},"orderClientSecret":"cs"}}"#, BridgeResponder())
+        checkout.handle(#"{"event":"order:updated","data":{"orderClientSecret":"cs"}}"#, BridgeResponder())
+
+        #expect(spy.entry(LogEvents.orderUpdated)?.attributes == [
+            "orderId": "o-2", "phase": "payment", "paymentStatus": "requires-kyc", "requiresKyc": "false", "hasClientSecret": "true"
+        ])
+        #expect(spy.entry(LogEvents.orderUpdatedEmpty)?.level == .warning)
+    }
+
+    @Test(arguments: [
+        (#"{"event":"kyc:ready"}"#, LogEvents.identityReady, CheckoutLogLevel.info, "inquiryId", "inq-1"),
+        (#"{"event":"kyc:completed","data":{"status":"verified"}}"#, LogEvents.identityCompleted, .info, "status", "verified"),
+        (#"{"event":"kyc:cancelled"}"#, LogEvents.identityCancelled, .info, "inquiryId", "inq-1"),
+        (#"{"event":"kyc:error","data":{"retriable":true,"reason":"provider-error","message":"boom"}}"#, LogEvents.identityError, .error, "reason", "provider-error")
+    ])
+    func identityEventsLog(raw: String, event: String, level: CheckoutLogLevel, key: String, value: String) {
+        let credentials = IdentityVerificationCredentials(inquiryId: "inq-1")
+        CrossmintIdentityVerification(apiKey: "ck_staging_test", credentials: credentials).handle(raw)
+
+        let entry = spy.entry(event)
+        #expect(entry?.level == level)
+        #expect(entry?.attributes?[key] == value)
+    }
+
     @Test func loadStartLogsHostAndPathWithoutQuery() {
         makeCoordinator().load("https://staging.crossmint.com/sdk/unstable/identity-verification?apiKey=ck_staging_secret", in: WKWebView())
 
