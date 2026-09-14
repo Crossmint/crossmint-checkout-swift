@@ -222,10 +222,19 @@ struct HostedWebView: UIViewRepresentable {
         ) {
             let decision: WKPermissionDecision = host.allowsMediaCapture && type == .camera ? .grant : .prompt
             Logger.checkout.debug(LogEvents.webviewMediaPermission, attributes: attributes([
-                "type": String(type.rawValue),
+                "type": Self.name(of: type),
                 "decision": decision == .grant ? "grant" : "prompt"
             ]))
             decisionHandler(decision)
+        }
+
+        private static func name(of type: WKMediaCaptureType) -> String {
+            switch type {
+            case .camera: "camera"
+            case .microphone: "microphone"
+            case .cameraAndMicrophone: "cameraAndMicrophone"
+            @unknown default: "unknown"
+            }
         }
 
         private func attributes(for url: URL?) -> [String: String] {

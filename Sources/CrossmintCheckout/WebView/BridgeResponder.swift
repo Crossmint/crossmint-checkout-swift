@@ -31,28 +31,24 @@ final class BridgeResponder {
     }
 
     func send(_ reply: BridgeReply) {
-        var attributes = ["event": reply.event]
-        if let error = reply.error {
-            attributes["error"] = error
-        }
         guard let script = Self.script(for: reply) else {
-            attributes["reason"] = "not-encodable"
-            Logger.checkout.error(LogEvents.bridgeOutboundDropped, attributes: attributes)
-            return
+            return Logger.checkout.error(LogEvents.bridgeOutboundDropped, attributes: Self.attributes(for: reply, reason: "not-encodable"))
         }
         guard let webView else {
-            attributes["reason"] = "no-web-view"
-            Logger.checkout.warning(LogEvents.bridgeOutboundDropped, attributes: attributes)
-            return
+            return Logger.checkout.warning(LogEvents.bridgeOutboundDropped, attributes: Self.attributes(for: reply, reason: "no-web-view"))
         }
-        Logger.checkout.debug(LogEvents.bridgeOutbound, attributes: attributes)
+        Logger.checkout.debug(LogEvents.bridgeOutbound, attributes: Self.attributes(for: reply))
         webView.evaluateJavaScript(script) { _, error in
             guard let error else { return }
-            Logger.checkout.error(
-                LogEvents.bridgeOutboundError,
-                attributes: attributes.merging(["error": error.localizedDescription]) { $1 }
-            )
+            Logger.checkout.error(LogEvents.bridgeOutboundError, attributes: Self.attributes(for: reply, error: error.localizedDescription))
         }
+    }
+
+    private static func attributes(for reply: BridgeReply, reason: String? = nil, error: String? = nil) -> [String: String] {
+        var attributes = ["event": reply.event]
+        attributes["error"] = error ?? reply.error
+        attributes["reason"] = reason
+        return attributes
     }
 
     static func script(for reply: BridgeReply) -> String? {

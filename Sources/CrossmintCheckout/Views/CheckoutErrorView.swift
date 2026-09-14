@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CheckoutErrorView: View {
     let error: Error
-    let surface: String
+    let surface: LogSurface
 
     var body: some View {
         VStack(spacing: 20) {
@@ -22,7 +22,7 @@ struct CheckoutErrorView: View {
         }
         .onAppear {
             Logger.checkout.error(LogEvents.configError, attributes: [
-                "surface": surface,
+                "surface": surface.rawValue,
                 "error": error.localizedDescription
             ])
         }

@@ -37,7 +37,7 @@ public struct CrossmintEmbeddedCheckout: View {
     private var onOrderUpdatedHandler: ((CheckoutOrderUpdate) -> Void)?
     private var onOrderCreationFailedHandler: ((String) -> Void)?
     private let explicitEnvironment: CheckoutEnvironment?
-    private static let surface = "embedded-checkout"
+    private static let surface = LogSurface.embeddedCheckout
 
     /// Creates a checkout for an order.
     ///
@@ -172,7 +172,7 @@ public struct CrossmintEmbeddedCheckout: View {
 
     private var logAttributes: [String: String] {
         [
-            "surface": Self.surface,
+            "surface": Self.surface.rawValue,
             "hasOrderId": String(orderId != nil),
             "hasClientSecret": String(clientSecret != nil),
             "hasPayment": String(payment != nil),
@@ -183,7 +183,7 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     @MainActor
-    private func handle(_ messageBody: Any, _ responder: BridgeResponder) {
+    func handle(_ messageBody: Any, _ responder: BridgeResponder) {
         guard let event = CheckoutEvent(messageBody: messageBody) else { return }
         switch event {
         case .orderUpdated(let update):
@@ -194,11 +194,7 @@ public struct CrossmintEmbeddedCheckout: View {
             Logger.checkout.error(LogEvents.orderCreationError, attributes: ["message": message])
             onOrderCreationFailedHandler?(message)
         case .cryptoRequest(let request):
-            guard let reply = request.noPayerReply else {
-                Logger.checkout.debug(LogEvents.cryptoRequestIgnored, attributes: ["event": request.eventName])
-                return
-            }
-            Logger.checkout.debug(LogEvents.cryptoRequestNoPayer, attributes: ["event": request.eventName])
+            guard let reply = request.noPayerReply else { return }
             responder.send(reply)
         }
     }

@@ -22,7 +22,7 @@ public struct CrossmintIdentityVerification: View {
     private var onCompleteHandler: ((IdentityVerificationStatus) -> Void)?
     private var onCancelHandler: (() -> Void)?
     private var onErrorHandler: ((IdentityVerificationError) -> Void)?
-    private static let surface = "identity-verification"
+    private static let surface = LogSurface.identityVerification
 
     /// Creates an identity verification view.
     ///
@@ -97,7 +97,7 @@ public struct CrossmintIdentityVerification: View {
 
     private var logAttributes: [String: String] {
         [
-            "surface": Self.surface,
+            "surface": Self.surface.rawValue,
             "inquiryId": credentials.inquiryId,
             "hasSessionToken": String(credentials.sessionToken != nil),
             "locale": locale?.rawValue ?? "default"
@@ -105,7 +105,7 @@ public struct CrossmintIdentityVerification: View {
     }
 
     @MainActor
-    private func handle(_ messageBody: Any) {
+    func handle(_ messageBody: Any) {
         guard let event = IdentityVerificationEvent(messageBody: messageBody) else { return }
         let attributes = ["inquiryId": credentials.inquiryId]
         switch event {

@@ -13,15 +13,6 @@ enum CryptoRequest: Equatable {
     case sendTransaction
     case signMessage
 
-    var eventName: String {
-        switch self {
-        case .load: "crypto:load"
-        case .connectWalletShow: "crypto:connect-wallet.show"
-        case .sendTransaction: "crypto:send-transaction"
-        case .signMessage: "crypto:sign-message"
-        }
-    }
-
     var noPayerReply: BridgeReply? {
         switch self {
         case .load:

@@ -38,9 +38,6 @@ enum LogEvents {
     static let orderCreationError = "checkout.order.creation.error"
     static let controllerCleared = "checkout.controller.cleared"
 
-    static let cryptoRequestNoPayer = "checkout.crypto.request.noPayer"
-    static let cryptoRequestIgnored = "checkout.crypto.request.ignored"
-
     static let identityReady = "checkout.identity.ready"
     static let identityCompleted = "checkout.identity.completed"
     static let identityCancelled = "checkout.identity.cancelled"
