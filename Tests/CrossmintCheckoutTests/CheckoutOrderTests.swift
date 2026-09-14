@@ -9,7 +9,7 @@ import Foundation
 import Testing
 @testable import CrossmintCheckout
 
-private func orderUpdate(_ raw: String) throws -> CheckoutOrderUpdate {
+func orderUpdate(_ raw: String) throws -> CheckoutOrderUpdate {
     guard case .orderUpdated(let update)? = CheckoutEvent(messageBody: raw) else {
         throw CheckoutError.invalidConfiguration("expected an order:updated event")
     }
