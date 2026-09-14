@@ -69,7 +69,7 @@ public struct CheckoutOrder: Decodable, Sendable {
             do {
                 kyc = try container.decodeIfPresent(IdentityVerificationCredentials.self, forKey: .kyc)
             } catch {
-                CheckoutLog.decoding.error("Ignoring an undecodable payment.preparation.kyc payload: \(error)")
+                Logger.checkout.error("Ignoring an undecodable payment.preparation.kyc payload: \(error)")
                 kyc = nil
             }
         }
