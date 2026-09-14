@@ -31,8 +31,28 @@ final class BridgeResponder {
     }
 
     func send(_ reply: BridgeReply) {
-        guard let script = Self.script(for: reply) else { return }
-        webView?.evaluateJavaScript(script)
+        var attributes = ["event": reply.event]
+        if let error = reply.error {
+            attributes["error"] = error
+        }
+        guard let script = Self.script(for: reply) else {
+            attributes["reason"] = "not-encodable"
+            Logger.checkout.error(LogEvents.bridgeOutboundDropped, attributes: attributes)
+            return
+        }
+        guard let webView else {
+            attributes["reason"] = "no-web-view"
+            Logger.checkout.warning(LogEvents.bridgeOutboundDropped, attributes: attributes)
+            return
+        }
+        Logger.checkout.debug(LogEvents.bridgeOutbound, attributes: attributes)
+        webView.evaluateJavaScript(script) { _, error in
+            guard let error else { return }
+            Logger.checkout.error(
+                LogEvents.bridgeOutboundError,
+                attributes: attributes.merging(["error": error.localizedDescription]) { $1 }
+            )
+        }
     }
 
     static func script(for reply: BridgeReply) -> String? {

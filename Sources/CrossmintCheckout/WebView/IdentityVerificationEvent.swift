@@ -40,12 +40,12 @@ enum IdentityVerificationEvent {
         case .ready:
             self = .ready
         case .completed:
-            let payload = BridgeDecoding.payload(CompletedPayload.self, from: message)
+            let payload = BridgeDecoding.payload(CompletedPayload.self, from: message, event: name)
             self = .completed(IdentityVerificationStatus(rawValue: payload?.status ?? "") ?? .unknown)
         case .cancelled:
             self = .cancelled
         case .error:
-            let payload = BridgeDecoding.payload(ErrorPayload.self, from: message)
+            let payload = BridgeDecoding.payload(ErrorPayload.self, from: message, event: name)
             self = .failed(IdentityVerificationError(
                 retriable: payload?.retriable ?? false,
                 reason: IdentityVerificationError.Reason(rawValue: payload?.reason ?? "") ?? .unknown,
