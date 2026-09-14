@@ -8,6 +8,9 @@
 import Foundation
 import UIKit
 
+private let datadogIntakeUrl = "https://http-intake.logs.datadoghq.com/v1/input"
+private let telemetryProxyUrl = "https://telemetry.crossmint.com/dd"
+
 enum DataDogConfig {
     static let clientToken = "pub946d87ea0c2cc02431c15e9446f776fc"
 
@@ -76,9 +79,9 @@ actor DataDogLoggerProvider: LoggerProvider {
 
     init(service: String, clientToken: String = DataDogConfig.clientToken) {
         self.service = service
-        let intake = "https://http-intake.logs.datadoghq.com/v1/input/\(clientToken)"
+        let intake = "\(datadogIntakeUrl)/\(clientToken)"
         let encoded = intake.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? intake
-        self.intakeUrl = URL(string: "https://telemetry.crossmint.com/dd?ddforward=\(encoded)")
+        self.intakeUrl = URL(string: "\(telemetryProxyUrl)?ddforward=\(encoded)")
 
         Self.observeLifecycle(of: self)
         Task { await self.captureDevice() }
