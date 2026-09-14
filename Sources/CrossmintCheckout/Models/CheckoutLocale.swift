@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// A locale that Crossmint's hosted pages accept.
+/// A language for the hosted pages of Crossmint.
 ///
-/// The set is closed. The hosted page rejects a value outside this list.
+/// The hosted pages support only these languages.
 public enum CheckoutLocale: String, Sendable, CaseIterable {
     case enUS = "en-US"
     case esES = "es-ES"

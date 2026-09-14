@@ -9,17 +9,26 @@ import Foundation
 
 /// The credentials for one identity verification session.
 ///
-/// An order that needs verification carries them in `payment.preparation.kyc`.
-/// Read them from ``CrossmintCheckoutController/identityVerificationCredentials`` or from your backend's order response.
+/// An order that needs verification includes them in `payment.preparation.kyc`.
+/// Read the credentials from ``CrossmintCheckoutController/identityVerificationCredentials``.
+/// You can also read them from the order response of your backend.
 public struct IdentityVerificationCredentials: Codable, Sendable, Equatable, Identifiable {
+    /// The identifier of the verification inquiry at the provider.
     public let inquiryId: String
+    /// The token that resumes an inquiry the buyer started before.
+    ///
+    /// The value is `nil` for a new inquiry.
     public let sessionToken: String?
 
     /// The verification provider. Persona is the only supported provider.
     public var provider: String { "persona" }
 
+    /// The stable identity of the credentials, equal to ``inquiryId``.
     public var id: String { inquiryId }
 
+    /// Creates the credentials.
+    ///
+    /// An empty `sessionToken` becomes `nil`.
     public init(inquiryId: String, sessionToken: String? = nil) {
         self.inquiryId = inquiryId
         self.sessionToken = Self.normalized(sessionToken)

@@ -9,7 +9,7 @@ import SwiftUI
 
 /// A view that shows Crossmint's hosted identity verification (KYC) step.
 ///
-/// The view fills the space the layout gives it, and the verification content scrolls inside it.
+/// The view fills the space the layout gives it. The verification content scrolls inside the view.
 /// The Crossmint environment comes from the API key. Attach event handlers with
 /// ``onReady(_:)``, ``onComplete(_:)``, ``onCancel(_:)``, and ``onError(_:)``.
 ///
@@ -23,11 +23,20 @@ public struct CrossmintIdentityVerification: View {
     private var onCancelHandler: (() -> Void)?
     private var onErrorHandler: ((IdentityVerificationError) -> Void)?
 
+    /// Creates an identity verification view.
+    ///
+    /// - Parameters:
+    ///   - apiKey: Your client-side API key. The key starts with `ck_`.
+    ///   - credentials: The credentials of the pending verification, from the order.
+    ///   - locale: The language of the verification UI. A `nil` value uses the default of the hosted page.
+    ///   - consoleLogLevel: The minimum level of the SDK messages that reach the system console.
     public init(
         apiKey: String,
         credentials: IdentityVerificationCredentials,
-        locale: CheckoutLocale? = nil
+        locale: CheckoutLocale? = nil,
+        consoleLogLevel: CheckoutLogLevel = .error
     ) {
+        Logger.level = consoleLogLevel
         self.apiKey = apiKey
         self.credentials = credentials
         self.locale = locale
@@ -40,7 +49,7 @@ public struct CrossmintIdentityVerification: View {
         return view
     }
 
-    /// Adds an action to perform when the buyer finishes the verification. The status carries the outcome.
+    /// Adds an action to perform when the buyer finishes the verification. The status gives the result.
     public func onComplete(_ action: @escaping (IdentityVerificationStatus) -> Void) -> Self {
         var view = self
         view.onCompleteHandler = action
@@ -54,7 +63,7 @@ public struct CrossmintIdentityVerification: View {
         return view
     }
 
-    /// Adds an action to perform when the verification fails. `retriable` says whether a new attempt can work.
+    /// Adds an action to perform when the verification fails. `retriable` shows if a new attempt can work.
     public func onError(_ action: @escaping (IdentityVerificationError) -> Void) -> Self {
         var view = self
         view.onErrorHandler = action
@@ -105,6 +114,7 @@ public struct CrossmintIdentityVerification: View {
 
     func generateVerificationUrl() throws -> String {
         let environment = try CheckoutEnvironment(apiKey: apiKey)
+        DataDogConfig.configure(for: environment)
 
         var queryItems: [URLQueryItem] = []
         queryItems.append(URLQueryItem(name: "credentials", value: try credentials.toJSON()))

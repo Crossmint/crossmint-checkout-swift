@@ -9,9 +9,9 @@ import SwiftUI
 
 /// A view that shows Crossmint's hosted checkout for an order.
 ///
-/// Create the order from your backend with the Crossmint Orders API, then pass the
-/// `orderId` and `clientSecret` it returns. The checkout page collects the payment and
-/// takes the buyer through the steps the order needs, identity verification included.
+/// Create the order from your backend with the Crossmint Orders API. Pass the `orderId`
+/// and `clientSecret` from the response. The checkout page collects the payment. It also
+/// takes the buyer through the other steps the order needs, such as identity verification.
 ///
 /// ```swift
 /// CrossmintEmbeddedCheckout(
@@ -21,9 +21,9 @@ import SwiftUI
 /// )
 /// ```
 ///
-/// Pass a ``CrossmintCheckoutController`` to observe the order as the buyer progresses,
-/// or attach ``onOrderUpdated(_:)`` and ``onOrderCreationFailed(_:)`` to handle the
-/// events yourself.
+/// Pass a ``CrossmintCheckoutController`` to observe the order as the buyer progresses.
+/// As an alternative, attach ``onOrderUpdated(_:)`` and ``onOrderCreationFailed(_:)`` to
+/// handle the events yourself.
 public struct CrossmintEmbeddedCheckout: View {
     private let apiKey: String
     private let orderId: String?
@@ -38,6 +38,19 @@ public struct CrossmintEmbeddedCheckout: View {
     private var onOrderCreationFailedHandler: ((String) -> Void)?
     private let explicitEnvironment: CheckoutEnvironment?
 
+    /// Creates a checkout for an order.
+    ///
+    /// - Parameters:
+    ///   - apiKey: Your client-side API key. The key starts with `ck_`.
+    ///   - orderId: The identifier of the order your backend created.
+    ///   - clientSecret: The client secret from the same order response.
+    ///   - lineItems: The items of a new order. Not supported yet, so pass `nil`.
+    ///   - payment: The payment settings. A `nil` value keeps the checkout defaults.
+    ///   - recipient: The recipient of a new order. Not supported yet, so pass `nil`.
+    ///   - appearance: The visual customization. A `nil` value keeps the checkout defaults.
+    ///   - identityVerificationHandling: The presentation mode for the identity verification step. Pass ``IdentityVerificationHandling/external`` to show the step yourself.
+    ///   - controller: The controller that receives the order updates.
+    ///   - consoleLogLevel: The minimum level of the SDK messages that reach the system console.
     public init(
         apiKey: String,
         orderId: String? = nil,
@@ -47,7 +60,8 @@ public struct CrossmintEmbeddedCheckout: View {
         recipient: CheckoutRecipient? = nil,
         appearance: CheckoutAppearance? = nil,
         identityVerificationHandling: IdentityVerificationHandling? = nil,
-        controller: CrossmintCheckoutController? = nil
+        controller: CrossmintCheckoutController? = nil,
+        consoleLogLevel: CheckoutLogLevel = .error
     ) {
         self.init(
             apiKey: apiKey,
@@ -59,10 +73,15 @@ public struct CrossmintEmbeddedCheckout: View {
             appearance: appearance,
             identityVerificationHandling: identityVerificationHandling,
             controller: controller,
+            consoleLogLevel: consoleLogLevel,
             explicitEnvironment: nil
         )
     }
 
+    /// Creates a checkout for an order with an explicit environment.
+    ///
+    /// The environment normally comes from the API key. Do not use this initializer in new code.
+    /// Use ``init(apiKey:orderId:clientSecret:lineItems:payment:recipient:appearance:identityVerificationHandling:controller:)`` instead.
     @available(
         *, deprecated,
         message: "The environment comes from the API key. Remove the environment parameter."
@@ -89,6 +108,7 @@ public struct CrossmintEmbeddedCheckout: View {
             appearance: appearance,
             identityVerificationHandling: identityVerificationHandling,
             controller: controller,
+            consoleLogLevel: nil,
             explicitEnvironment: environment
         )
     }
@@ -103,8 +123,12 @@ public struct CrossmintEmbeddedCheckout: View {
         appearance: CheckoutAppearance?,
         identityVerificationHandling: IdentityVerificationHandling?,
         controller: CrossmintCheckoutController?,
+        consoleLogLevel: CheckoutLogLevel?,
         explicitEnvironment: CheckoutEnvironment?
     ) {
+        if let consoleLogLevel {
+            Logger.level = consoleLogLevel
+        }
         self.apiKey = apiKey
         self.orderId = orderId
         self.clientSecret = clientSecret
@@ -209,6 +233,8 @@ public struct CrossmintEmbeddedCheckout: View {
 
     private func resolvedEnvironment() throws -> CheckoutEnvironment {
         let parsed = try CheckoutEnvironment(apiKey: apiKey)
-        return explicitEnvironment ?? parsed
+        let environment = explicitEnvironment ?? parsed
+        DataDogConfig.configure(for: environment)
+        return environment
     }
 }

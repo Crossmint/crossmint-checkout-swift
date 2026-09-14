@@ -7,3 +7,5 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 Examples/CheckoutDemo/Config/Secrets.xcconfig
+.claude/
+/sdk-reference
