@@ -75,7 +75,13 @@ struct CredentialScrubberTests {
         #expect(provider.lastAttributes?["context"] == "key [REDACTED_API_KEY]")
     }
 
+    @Test func redactsEmailAddresses() {
+        let scrubbed = CredentialScrubber.scrub("Recipient email invalid: first.last+tag@example.co.uk for order-1")
+
+        #expect(scrubbed == "Recipient email invalid: [REDACTED_EMAIL] for order-1")
+    }
+
     @Test func compilesEveryPattern() {
-        #expect(CredentialScrubber.patterns.count == 4)
+        #expect(CredentialScrubber.patterns.count == 5)
     }
 }
