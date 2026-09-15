@@ -11,7 +11,11 @@ import SwiftUI
 struct CheckoutDemoApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if let apiKey = DemoConfiguration.apiKey {
+                PlaygroundView(apiKey: apiKey)
+            } else {
+                MissingConfigurationView()
+            }
         }
     }
 }
