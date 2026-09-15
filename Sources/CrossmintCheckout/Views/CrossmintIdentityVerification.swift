@@ -22,6 +22,7 @@ public struct CrossmintIdentityVerification: View {
     private var onCompleteHandler: ((IdentityVerificationStatus) -> Void)?
     private var onCancelHandler: (() -> Void)?
     private var onErrorHandler: ((IdentityVerificationError) -> Void)?
+    private static let surface = LogSurface.identityVerification
 
     /// Creates an identity verification view.
     ///
@@ -79,6 +80,7 @@ public struct CrossmintIdentityVerification: View {
                 allowsMediaCapture: true,
                 isScrollEnabled: true,
                 injectsViewportScript: false,
+                logAttributes: logAttributes,
                 onMessage: { body, _ in handle(body) },
                 onLoadFailure: { message in
                     onErrorHandler?(IdentityVerificationError(
@@ -89,21 +91,39 @@ public struct CrossmintIdentityVerification: View {
                 }
             )
         case .failure(let error):
-            CheckoutErrorView(error: error)
+            CheckoutErrorView(error: error, surface: Self.surface)
         }
     }
 
+    private var logAttributes: [String: String] {
+        [
+            "surface": Self.surface.rawValue,
+            "inquiryId": credentials.inquiryId,
+            "hasSessionToken": String(credentials.sessionToken != nil),
+            "locale": locale?.rawValue ?? "default"
+        ]
+    }
+
     @MainActor
-    private func handle(_ messageBody: Any) {
+    func handle(_ messageBody: Any) {
         guard let event = IdentityVerificationEvent(messageBody: messageBody) else { return }
+        let attributes = ["inquiryId": credentials.inquiryId]
         switch event {
         case .ready:
+            Logger.checkout.info(LogEvents.identityReady, attributes: attributes)
             onReadyHandler?()
         case .completed(let status):
+            Logger.checkout.info(LogEvents.identityCompleted, attributes: attributes.merging(["status": status.rawValue]) { $1 })
             onCompleteHandler?(status)
         case .cancelled:
+            Logger.checkout.info(LogEvents.identityCancelled, attributes: attributes)
             onCancelHandler?()
         case .failed(let error):
+            Logger.checkout.error(LogEvents.identityError, attributes: attributes.merging([
+                "reason": error.reason.rawValue,
+                "retriable": String(error.retriable),
+                "message": error.message
+            ]) { $1 })
             onErrorHandler?(error)
         }
     }

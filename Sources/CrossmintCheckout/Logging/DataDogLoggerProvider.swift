@@ -32,6 +32,7 @@ private struct LogEntry {
     let level: CheckoutLogLevel
     let message: String
     let timestamp: String
+    let environment: String
     let attributes: [String: String]
 
     var status: String {
@@ -93,13 +94,20 @@ actor DataDogLoggerProvider: LoggerProvider {
 
     nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?) {
         let date = Date()
+        let environment = DataDogConfig.environment
         Task { [weak self] in
-            await self?.enqueue(level: level, message: message, attributes: attributes ?? [:], date: date)
+            await self?.enqueue(level: level, message: message, attributes: attributes ?? [:], date: date, environment: environment)
         }
     }
 
-    private func enqueue(level: CheckoutLogLevel, message: String, attributes: [String: String], date: Date) {
-        queue.append(LogEntry(level: level, message: message, timestamp: dateFormatter.string(from: date), attributes: attributes))
+    private func enqueue(level: CheckoutLogLevel, message: String, attributes: [String: String], date: Date, environment: String) {
+        queue.append(LogEntry(
+            level: level,
+            message: message,
+            timestamp: dateFormatter.string(from: date),
+            environment: environment,
+            attributes: attributes
+        ))
 
         if queue.count >= Self.batchSize {
             Task { await flush() }
@@ -159,7 +167,7 @@ actor DataDogLoggerProvider: LoggerProvider {
 
         return [
             "timestamp": entry.timestamp,
-            "tags": ["env:\(DataDogConfig.environment)", "version:\(device.appVersion)", "source:ios"],
+            "tags": ["env:\(entry.environment)", "version:\(device.appVersion)", "source:ios"],
             "service": Self.serviceName,
             "message": entry.message,
             "hostname": Bundle.main.bundleIdentifier ?? "unknown",

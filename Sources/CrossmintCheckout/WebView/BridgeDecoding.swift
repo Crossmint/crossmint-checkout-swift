@@ -25,7 +25,12 @@ enum BridgeDecoding {
         return (named.event, message)
     }
 
-    static func payload<Payload: Decodable>(_ type: Payload.Type, from message: Data) -> Payload? {
-        try? JSONDecoder().decode(Envelope<Payload>.self, from: message).data
+    static func payload<Payload: Decodable>(_ type: Payload.Type, from message: Data, event: String) -> Payload? {
+        do {
+            return try JSONDecoder().decode(Envelope<Payload>.self, from: message).data
+        } catch {
+            Logger.checkout.error(LogEvents.bridgeInboundDecodeError, attributes: ["event": event, "error": "\(error)"])
+            return nil
+        }
     }
 }
