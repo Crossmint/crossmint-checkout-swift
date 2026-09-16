@@ -96,7 +96,7 @@ final class DemoStore {
 
     func createOrder() async {
         guard let api else {
-            orderErrorMessage = "Add your API key in Settings before creating an order."
+            orderErrorMessage = "Add your client key in Settings before creating an order."
             return
         }
         guard draft.validationMessage == nil else {

@@ -23,12 +23,12 @@ struct APIKeySection: View {
                 .accessibilityValue("Hidden")
                 .accessibilityIdentifier("api-key-masked-label")
             } else {
-                TextField("Paste your key", text: $draft, axis: .vertical)
+                TextField("Paste your client key", text: $draft, axis: .vertical)
                     .font(.callout.monospaced())
                     .lineLimit(1...4)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
-                    .accessibilityLabel("API key")
+                    .accessibilityLabel("Client API key")
                     .accessibilityIdentifier("api-key-input")
 
                 Button("Save key") {
@@ -46,7 +46,7 @@ struct APIKeySection: View {
                 }
             }
         } header: {
-            Text("API key")
+            Text("Client API key")
         } footer: {
             Text(footer)
         }
@@ -66,11 +66,13 @@ struct APIKeySection: View {
 
     private var footer: String {
         if configuration.isManagedByBuildSettings {
-            "This build carries its own key, so the app cannot change it."
+            "This build carries its own client key, so the app cannot change it."
+        } else if trimmedDraft.hasPrefix("sk_") {
+            "That is a server key. The demo needs a client key, which starts with ck_."
         } else if !trimmedDraft.isEmpty && DemoConfiguration.environment(for: trimmedDraft) == nil {
-            "That does not look like a Crossmint key. Keys start with ck_ and you can copy one from the Crossmint console."
+            "That does not look like a client key. Client keys start with ck_, and you can copy one from the Crossmint console."
         } else {
-            "Copy a key from console.crossmint.com. It stays on this device."
+            "Copy a client key from console.crossmint.com. It stays on this device."
         }
     }
 }

@@ -37,9 +37,9 @@ struct SettingsView: View {
         if let environment = configuration.environment {
             environment.note
         } else if configuration.apiKey == nil {
-            "The demo needs a key before it can create an order."
+            "The demo needs a client key before it can create an order."
         } else {
-            "The demo cannot tell which environment this key belongs to. Use a key that starts with ck_staging_ or ck_production_."
+            "The demo cannot tell which environment this key belongs to. Use a client key that starts with ck_staging_ or ck_production_."
         }
     }
 }

@@ -19,7 +19,7 @@ struct SidebarView: View {
         List(selection: $selection) {
             if needsAPIKey {
                 Section {
-                    Button("Add API key", systemImage: "key") {
+                    Button("Add client key", systemImage: "key") {
                         isShowingSettings = true
                     }
                     .accessibilityIdentifier("add-api-key-button")
@@ -74,7 +74,7 @@ struct SidebarView: View {
                         }
                 }
                 .accessibilityLabel("Settings")
-                .accessibilityValue(needsAPIKey ? "API key needed" : "")
+                .accessibilityValue(needsAPIKey ? "Client key needed" : "")
                 .accessibilityIdentifier("show-settings-button")
             }
         }
