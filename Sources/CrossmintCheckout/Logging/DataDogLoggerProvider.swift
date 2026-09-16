@@ -28,11 +28,12 @@ enum DataDogConfig {
     }
 }
 
-private struct LogEntry {
+struct LogEntry {
     let level: CheckoutLogLevel
     let message: String
     let timestamp: String
     let environment: String
+    let threadName: String
     let attributes: [String: String]
 
     var status: String {
@@ -45,29 +46,56 @@ private struct LogEntry {
     }
 }
 
-private struct DeviceInfo: Sendable {
+struct DeviceInfo: Sendable {
     var model = "unknown"
     var name = "unknown"
     var osName = "unknown"
     var osVersion = "unknown"
-    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-    let appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+    var osBuild = "unknown"
+    var architecture = "unknown"
+    var appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    var appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
 
     @MainActor
     static func capture() -> DeviceInfo {
         let device = UIDevice.current
-        return DeviceInfo(model: device.model, name: device.name, osName: device.systemName, osVersion: device.systemVersion)
+        return DeviceInfo(
+            model: device.model,
+            name: device.name,
+            osName: device.systemName,
+            osVersion: device.systemVersion,
+            osBuild: osBuild(),
+            architecture: architecture()
+        )
+    }
+
+    private static func osBuild() -> String {
+        var size = 0
+        sysctlbyname("kern.osversion", nil, &size, nil, 0)
+        var build = [UInt8](repeating: 0, count: size)
+        sysctlbyname("kern.osversion", &build, &size, nil, 0)
+        return String(decoding: build.prefix(while: { $0 != 0 }), as: UTF8.self)
+    }
+
+    private static func architecture() -> String {
+        #if arch(arm64e)
+        return "arm64e"
+        #elseif arch(arm64)
+        return "arm64"
+        #elseif arch(x86_64)
+        return "x86_64"
+        #else
+        return "unknown"
+        #endif
     }
 }
 
 actor DataDogLoggerProvider: LoggerProvider {
-    private static let serviceName = "crossmint-ios-sdk"
     private static let batchSize = 10
     private static let batchTimeoutNanoseconds: UInt64 = 5_000_000_000
 
-    private let service: String
+    private let formatter: DataDogLogFormatter
     private let intakeUrl: URL?
-    private let sessionId = UUID().uuidString
     private var queue: [LogEntry] = []
     private var flushTask: Task<Void, Never>?
     private var device = DeviceInfo()
@@ -79,7 +107,11 @@ actor DataDogLoggerProvider: LoggerProvider {
     }()
 
     init(service: String, clientToken: String = DataDogConfig.clientToken) {
-        self.service = service
+        self.formatter = DataDogLogFormatter(
+            loggerName: service,
+            sessionId: UUID().uuidString,
+            hostname: Bundle.main.bundleIdentifier ?? "unknown"
+        )
         let intake = "\(datadogIntakeUrl)/\(clientToken)"
         let encoded = intake.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? intake
         self.intakeUrl = URL(string: "\(telemetryProxyUrl)?ddforward=\(encoded)")
@@ -95,17 +127,43 @@ actor DataDogLoggerProvider: LoggerProvider {
     nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?) {
         let date = Date()
         let environment = DataDogConfig.environment
+        let threadName = Self.threadName()
         Task { [weak self] in
-            await self?.enqueue(level: level, message: message, attributes: attributes ?? [:], date: date, environment: environment)
+            await self?.enqueue(
+                level: level,
+                message: message,
+                attributes: attributes ?? [:],
+                date: date,
+                environment: environment,
+                threadName: threadName
+            )
         }
     }
 
-    private func enqueue(level: CheckoutLogLevel, message: String, attributes: [String: String], date: Date, environment: String) {
+    private static func threadName() -> String {
+        if Thread.isMainThread {
+            return "main"
+        }
+        if let name = Thread.current.name, !name.isEmpty {
+            return name
+        }
+        return "background"
+    }
+
+    private func enqueue(
+        level: CheckoutLogLevel,
+        message: String,
+        attributes: [String: String],
+        date: Date,
+        environment: String,
+        threadName: String
+    ) {
         queue.append(LogEntry(
             level: level,
             message: message,
             timestamp: dateFormatter.string(from: date),
             environment: environment,
+            threadName: threadName,
             attributes: attributes
         ))
 
@@ -136,7 +194,8 @@ actor DataDogLoggerProvider: LoggerProvider {
             var request = URLRequest(url: intakeUrl)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: batch.map(payload))
+            let logs = batch.map { formatter.payload(for: $0, device: device) }
+            request.httpBody = try JSONSerialization.data(withJSONObject: logs)
 
             let (_, response) = try await URLSession.shared.data(for: request)
             if let status = (response as? HTTPURLResponse)?.statusCode, status >= 400 {
@@ -145,35 +204,6 @@ actor DataDogLoggerProvider: LoggerProvider {
         } catch {
             print("[CrossmintCheckout Logger] Failed to send logs: \(error)")
         }
-    }
-
-    private func payload(for entry: LogEntry) -> [String: Any] {
-        var attributes: [String: Any] = [
-            "date": entry.timestamp,
-            "status": entry.status,
-            "service": Self.serviceName,
-            "sdk_name": SDKVersion.name,
-            "sdk_version": SDKVersion.version,
-            "logger": ["name": service, "version": SDKVersion.version],
-            "platform": "ios",
-            "version": device.appVersion,
-            "build_version": device.appBuild,
-            "os": ["name": device.osName, "version": device.osVersion],
-            "_dd": ["device": ["name": device.name, "model": device.model, "brand": "Apple"]]
-        ]
-        for (key, value) in entry.attributes {
-            attributes[key] = value
-        }
-
-        return [
-            "timestamp": entry.timestamp,
-            "tags": ["env:\(entry.environment)", "version:\(device.appVersion)", "source:ios"],
-            "service": Self.serviceName,
-            "message": entry.message,
-            "hostname": Bundle.main.bundleIdentifier ?? "unknown",
-            "dd-session_id": sessionId,
-            "attributes": attributes
-        ]
     }
 
     private static func observeLifecycle(of provider: DataDogLoggerProvider) {
