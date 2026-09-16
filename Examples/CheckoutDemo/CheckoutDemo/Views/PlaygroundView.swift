@@ -11,11 +11,14 @@ struct PlaygroundView: View {
     let apiKey: String
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(DemoConfiguration.self) private var configuration
     @State private var store: DemoStore
     @State private var isShowingCheckout = false
     @State private var checkoutDetent: PresentationDetent = .large
 
     private static let parkedDetent = PresentationDetent.height(96)
+
+    private var needsAPIKey: Bool { configuration.apiKey == nil }
 
     init(apiKey: String, configuration: DemoConfiguration) {
         self.apiKey = apiKey
@@ -38,8 +41,11 @@ struct PlaygroundView: View {
                 isShowingCheckout: $isShowingCheckout,
                 checkoutDetent: $checkoutDetent
             )
+            .disabled(needsAPIKey)
+            .opacity(needsAPIKey ? 0.5 : 1)
         } detail: {
             CheckoutPreviewView(apiKey: apiKey)
+                .disabled(needsAPIKey)
         }
         .environment(store)
         .onChange(of: apiKey) { _, _ in

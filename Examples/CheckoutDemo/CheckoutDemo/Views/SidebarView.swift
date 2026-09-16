@@ -12,25 +12,39 @@ struct SidebarView: View {
     var showsActiveOrder = false
 
     @Environment(DemoStore.self) private var store
+    @Environment(DemoConfiguration.self) private var configuration
     @State private var isShowingSettings = false
 
     var body: some View {
         List(selection: $selection) {
-            Section("Payment") {
-                ForEach(SidebarSection.paymentSections) { section in
-                    row(for: section)
+            if needsAPIKey {
+                Section {
+                    Button("Add API key", systemImage: "key") {
+                        isShowingSettings = true
+                    }
+                    .accessibilityIdentifier("add-api-key-button")
                 }
             }
-            Section("Identity") {
-                ForEach(SidebarSection.identitySections) { section in
-                    row(for: section)
+
+            Group {
+                Section("Payment") {
+                    ForEach(SidebarSection.paymentSections) { section in
+                        row(for: section)
+                    }
+                }
+                Section("Identity") {
+                    ForEach(SidebarSection.identitySections) { section in
+                        row(for: section)
+                    }
+                }
+                Section("Activity") {
+                    ForEach(SidebarSection.activitySections) { section in
+                        row(for: section)
+                    }
                 }
             }
-            Section("Activity") {
-                ForEach(SidebarSection.activitySections) { section in
-                    row(for: section)
-                }
-            }
+            .disabled(needsAPIKey)
+            .opacity(needsAPIKey ? 0.5 : 1)
         }
         .navigationTitle("Playground")
         .navigationBarTitleDisplayMode(.inline)
@@ -47,11 +61,25 @@ struct SidebarView: View {
                 .labelStyle(.titleAndIcon)
             }
             ToolbarItem(placement: .topBarLeading) {
-                Button("Settings", systemImage: "gearshape") {
+                Button {
                     isShowingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .overlay(alignment: .topTrailing) {
+                            if needsAPIKey {
+                                Circle()
+                                    .fill(.red)
+                                    .frame(width: 7, height: 7)
+                            }
+                        }
                 }
+                .accessibilityLabel("Settings")
+                .accessibilityValue(needsAPIKey ? "API key needed" : "")
                 .accessibilityIdentifier("show-settings-button")
             }
+        }
+        .task {
+            if needsAPIKey { isShowingSettings = true }
         }
         .sheet(isPresented: $isShowingSettings) {
             NavigationStack {
@@ -73,6 +101,8 @@ struct SidebarView: View {
         }
         .accessibilityIdentifier("sidebar-list")
     }
+
+    private var needsAPIKey: Bool { configuration.apiKey == nil }
 
     private func row(for section: SidebarSection) -> some View {
         Label(section.title, systemImage: section.symbolName)

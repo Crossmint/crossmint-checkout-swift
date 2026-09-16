@@ -16,6 +16,7 @@ final class DemoStore {
 
     init(configuration: DemoConfiguration) {
         self.configuration = configuration
+        selection = configuration.apiKey == nil ? nil : .order
     }
 
     var selection: SidebarSection? = .order {
@@ -95,7 +96,7 @@ final class DemoStore {
 
     func createOrder() async {
         guard let api else {
-            orderErrorMessage = "Add a Crossmint client key before creating an order."
+            orderErrorMessage = "Add your API key in Settings before creating an order."
             return
         }
         guard draft.validationMessage == nil else {

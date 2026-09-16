@@ -66,7 +66,7 @@ struct APIKeySection: View {
 
     private var footer: String {
         if configuration.isManagedByBuildSettings {
-            "This key comes from the project, so the app cannot change it. Clear it in Config/Secrets.xcconfig and build again to set a key here."
+            "This build carries its own key, so the app cannot change it."
         } else if !trimmedDraft.isEmpty && DemoConfiguration.environment(for: trimmedDraft) == nil {
             "That does not look like a Crossmint key. Keys start with ck_ and you can copy one from the Crossmint console."
         } else {
