@@ -9,13 +9,12 @@ import SwiftUI
 
 @main
 struct CheckoutDemoApp: App {
+    @State private var configuration = DemoConfiguration()
+
     var body: some Scene {
         WindowGroup {
-            if let apiKey = DemoConfiguration.apiKey {
-                PlaygroundView(apiKey: apiKey)
-            } else {
-                MissingConfigurationView()
-            }
+            RootView()
+                .environment(configuration)
         }
     }
 }

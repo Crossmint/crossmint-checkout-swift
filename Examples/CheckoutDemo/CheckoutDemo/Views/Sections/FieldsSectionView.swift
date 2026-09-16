@@ -32,6 +32,6 @@ struct FieldsSectionView: View {
 
 #Preview {
     NavigationStack {
-        FieldsSectionView().environment(DemoStore())
+        FieldsSectionView().environment(DemoStore(configuration: DemoConfiguration()))
     }
 }

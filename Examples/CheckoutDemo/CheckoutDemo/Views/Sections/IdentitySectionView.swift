@@ -24,13 +24,13 @@ struct IdentitySectionView: View {
                 )
                 .accessibilityIdentifier("external-identity-verification-toggle")
             } footer: {
-                Text("The checkout leaves out its verification step. When an order needs one, the app presents CrossmintIdentityVerification instead.")
+                Text("The checkout leaves out its verification step. When an order needs one, the app presents the verification screen itself.")
             }
 
             if let credentials = store.identityVerificationCredentials {
                 Section {
                     CopyableRow(
-                        label: "inquiryId",
+                        label: "Verification ID",
                         value: credentials.inquiryId,
                         accessibilityID: "order-inquiry-id-label"
                     )
@@ -44,13 +44,13 @@ struct IdentitySectionView: View {
             }
 
             Section {
-                TextField("inquiryId", text: $store.identityInquiryId)
+                TextField("Verification ID", text: $store.identityInquiryId)
                     .font(.callout.monospaced())
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .accessibilityIdentifier("identity-inquiry-id-input")
 
-                TextField("sessionToken (optional)", text: $store.identitySessionToken)
+                TextField("Session token (optional)", text: $store.identitySessionToken)
                     .font(.callout.monospaced())
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
@@ -58,7 +58,7 @@ struct IdentitySectionView: View {
             } header: {
                 Text("Credentials")
             } footer: {
-                Text("An inquiryId comes from an order with the requires-kyc payment status. Create one in the Order section with an unverified email.")
+                Text("A verification ID comes from an order that needs an identity check. Create one in the Order section with an unverified email.")
             }
 
             Section {
@@ -86,6 +86,6 @@ struct IdentitySectionView: View {
 
 #Preview {
     NavigationStack {
-        IdentitySectionView(apiKey: "ck_staging_example").environment(DemoStore())
+        IdentitySectionView(apiKey: "ck_staging_example").environment(DemoStore(configuration: DemoConfiguration()))
     }
 }

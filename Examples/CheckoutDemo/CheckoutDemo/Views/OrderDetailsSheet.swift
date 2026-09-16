@@ -18,12 +18,12 @@ struct OrderDetailsSheet: View {
             Form {
                 Section {
                     CopyableRow(
-                        label: "orderId",
+                        label: "Order ID",
                         value: session.orderId,
                         accessibilityID: "details-order-id-label"
                     )
                     CopyableRow(
-                        label: "clientSecret",
+                        label: "Client secret",
                         value: session.clientSecret,
                         accessibilityID: "client-secret-label"
                     )
@@ -36,7 +36,7 @@ struct OrderDetailsSheet: View {
                     LabeledContent("Payment status", value: store.paymentStatusDescription)
                         .accessibilityIdentifier("payment-status-label")
                 } footer: {
-                    Text("The SDK reports the phase and the payment status as the checkout runs.")
+                    Text("The checkout reports the phase and the payment status while it runs.")
                 }
 
                 Section {
@@ -80,5 +80,5 @@ struct OrderDetailsSheet: View {
             source: .createdInApp
         )
     )
-    .environment(DemoStore())
+    .environment(DemoStore(configuration: DemoConfiguration()))
 }

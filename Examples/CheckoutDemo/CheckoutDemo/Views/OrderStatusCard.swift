@@ -109,5 +109,5 @@ struct OrderStatusCard: View {
             source: .createdInApp
         )
     )
-    .environment(DemoStore())
+    .environment(DemoStore(configuration: DemoConfiguration()))
 }

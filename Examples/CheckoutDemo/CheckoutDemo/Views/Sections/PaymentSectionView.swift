@@ -15,14 +15,14 @@ struct PaymentSectionView: View {
 
         Form {
             Section {
-                Toggle("Fiat", isOn: $store.options.fiatEnabled)
+                Toggle("Card or Apple Pay", isOn: $store.options.fiatEnabled)
                     .accessibilityIdentifier("fiat-enabled-toggle")
                 Toggle("Crypto", isOn: $store.options.cryptoEnabled)
                     .accessibilityIdentifier("crypto-enabled-toggle")
             } header: {
-                Text("Payment types")
+                Text("Payment methods")
             } footer: {
-                Text("The buyer needs at least one of these types.")
+                Text("The buyer needs at least one of these.")
             }
 
             Section("Fiat methods") {
@@ -38,6 +38,6 @@ struct PaymentSectionView: View {
 
 #Preview {
     NavigationStack {
-        PaymentSectionView().environment(DemoStore())
+        PaymentSectionView().environment(DemoStore(configuration: DemoConfiguration()))
     }
 }

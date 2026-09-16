@@ -12,6 +12,12 @@ import Observation
 @Observable
 @MainActor
 final class DemoStore {
+    private let configuration: DemoConfiguration
+
+    init(configuration: DemoConfiguration) {
+        self.configuration = configuration
+    }
+
     var selection: SidebarSection? = .order {
         didSet { if let selection { lastSelection = selection } }
     }
@@ -45,8 +51,8 @@ final class DemoStore {
     var identityLocale: CheckoutLocale?
 
     private var api: OrdersAPI? {
-        guard let apiKey = DemoConfiguration.apiKey,
-              let host = DemoConfiguration.environment?.host else { return nil }
+        guard let apiKey = configuration.apiKey,
+              let host = configuration.environment?.host else { return nil }
         return OrdersAPI(apiKey: apiKey, host: host)
     }
 

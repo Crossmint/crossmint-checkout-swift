@@ -11,11 +11,16 @@ struct PlaygroundView: View {
     let apiKey: String
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var store = DemoStore()
+    @State private var store: DemoStore
     @State private var isShowingCheckout = false
     @State private var checkoutDetent: PresentationDetent = .large
 
     private static let parkedDetent = PresentationDetent.height(96)
+
+    init(apiKey: String, configuration: DemoConfiguration) {
+        self.apiKey = apiKey
+        _store = State(initialValue: DemoStore(configuration: configuration))
+    }
 
     var body: some View {
         @Bindable var store = store
@@ -37,6 +42,9 @@ struct PlaygroundView: View {
             CheckoutPreviewView(apiKey: apiKey)
         }
         .environment(store)
+        .onChange(of: apiKey) { _, _ in
+            store.discardOrder()
+        }
         .onChange(of: horizontalSizeClass) { _, newValue in
             if newValue != .compact { isShowingCheckout = false }
             guard newValue != .compact, store.selection == nil else { return }
@@ -66,5 +74,5 @@ struct PlaygroundView: View {
 }
 
 #Preview {
-    PlaygroundView(apiKey: "ck_staging_example")
+    PlaygroundView(apiKey: "ck_staging_example", configuration: DemoConfiguration())
 }

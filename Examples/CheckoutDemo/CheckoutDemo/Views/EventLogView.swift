@@ -39,6 +39,6 @@ struct EventLogView: View {
 
 #Preview {
     NavigationStack {
-        EventLogView().environment(DemoStore())
+        EventLogView().environment(DemoStore(configuration: DemoConfiguration()))
     }
 }

@@ -68,7 +68,7 @@ struct OrderSectionView: View {
             }
 
             if store.draft.preset == nil {
-                TextField("chain:token-address", text: $store.draft.customTokenLocator)
+                TextField("Chain and token address", text: $store.draft.customTokenLocator)
                     .font(.callout.monospaced())
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
@@ -124,7 +124,7 @@ struct OrderSectionView: View {
             .disabled(store.draft.validationMessage != nil || store.isCreatingOrder)
             .accessibilityIdentifier("create-order-button")
         } footer: {
-            Text("This demo calls the Orders API from the device, so you can try the checkout without a backend. In production, create orders on your server.")
+            Text("This demo creates the order from the device, so you can try the checkout without a backend. In production, create orders on your server.")
         }
     }
 
@@ -132,19 +132,19 @@ struct OrderSectionView: View {
         @Bindable var store = store
 
         Section {
-            TextField("orderId", text: $store.existingOrderId)
+            TextField("Order ID", text: $store.existingOrderId)
                 .font(.callout.monospaced())
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .accessibilityIdentifier("existing-order-id-input")
 
-            TextField("clientSecret", text: $store.existingClientSecret)
+            TextField("Client secret", text: $store.existingClientSecret)
                 .font(.callout.monospaced())
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .accessibilityIdentifier("existing-client-secret-input")
         } footer: {
-            Text("Both values come from the Orders API response your backend gets.")
+            Text("Both values come from the order your backend creates.")
         }
 
         Section {
@@ -157,6 +157,6 @@ struct OrderSectionView: View {
 
 #Preview {
     NavigationStack {
-        OrderSectionView().environment(DemoStore())
+        OrderSectionView().environment(DemoStore(configuration: DemoConfiguration()))
     }
 }

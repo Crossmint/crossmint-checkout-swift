@@ -51,6 +51,6 @@ struct AppearanceSectionView: View {
 
 #Preview {
     NavigationStack {
-        AppearanceSectionView().environment(DemoStore())
+        AppearanceSectionView().environment(DemoStore(configuration: DemoConfiguration()))
     }
 }

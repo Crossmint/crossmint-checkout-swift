@@ -1,21 +1,25 @@
 //
-//  AboutView.swift
+//  SettingsView.swift
 //  CheckoutDemo
 //
-//  Created by Tomás Martins on 8/31/26.
+//  Created by Tomás Martins on 9/16/26.
 //
 
 import SwiftUI
 
-struct AboutView: View {
+struct SettingsView: View {
+    @Environment(DemoConfiguration.self) private var configuration
+
     private let documentationURL = URL(string: "https://docs.crossmint.com")!
     private let consoleURL = URL(string: "https://console.crossmint.com")!
 
     var body: some View {
         Form {
+            APIKeySection()
+
             Section {
-                LabeledContent("Environment", value: DemoConfiguration.environment?.title ?? "Unknown")
-                    .accessibilityIdentifier("environment-label")
+                LabeledContent("Environment", value: configuration.environment?.title ?? "Unknown")
+                    .accessibilityIdentifier("settings-environment-label")
             } footer: {
                 Text(environmentNote)
             }
@@ -30,12 +34,11 @@ struct AboutView: View {
     }
 
     private var environmentNote: String {
-        switch DemoConfiguration.environment {
-        case .staging:
-            "This build points at staging. Orders use testnet tokens, so a checkout here cannot move real funds."
-        case .production:
-            "This build points at production. A checkout here moves real funds."
-        case nil:
+        if let environment = configuration.environment {
+            environment.note
+        } else if configuration.apiKey == nil {
+            "The demo needs a key before it can create an order."
+        } else {
             "The demo cannot tell which environment this key belongs to. Use a key that starts with ck_staging_ or ck_production_."
         }
     }
@@ -43,6 +46,8 @@ struct AboutView: View {
 
 #Preview {
     NavigationStack {
-        AboutView()
+        SettingsView()
+            .navigationTitle("Settings")
     }
+    .environment(DemoConfiguration())
 }

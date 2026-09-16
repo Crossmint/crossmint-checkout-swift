@@ -12,7 +12,7 @@ struct SidebarView: View {
     var showsActiveOrder = false
 
     @Environment(DemoStore.self) private var store
-    @State private var isShowingAbout = false
+    @State private var isShowingSettings = false
 
     var body: some View {
         List(selection: $selection) {
@@ -47,21 +47,21 @@ struct SidebarView: View {
                 .labelStyle(.titleAndIcon)
             }
             ToolbarItem(placement: .topBarLeading) {
-                Button("About", systemImage: "info.circle") {
-                    isShowingAbout = true
+                Button("Settings", systemImage: "gearshape") {
+                    isShowingSettings = true
                 }
-                .accessibilityIdentifier("show-about-button")
+                .accessibilityIdentifier("show-settings-button")
             }
         }
-        .sheet(isPresented: $isShowingAbout) {
+        .sheet(isPresented: $isShowingSettings) {
             NavigationStack {
-                AboutView()
-                    .navigationTitle("About")
+                SettingsView()
+                    .navigationTitle("Settings")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            CloseButton { isShowingAbout = false }
-                                .accessibilityIdentifier("close-about-button")
+                            CloseButton { isShowingSettings = false }
+                                .accessibilityIdentifier("close-settings-button")
                         }
                     }
             }
@@ -86,6 +86,7 @@ struct SidebarView: View {
 #Preview {
     NavigationStack {
         SidebarView(selection: .constant(.order))
-            .environment(DemoStore())
+            .environment(DemoStore(configuration: DemoConfiguration()))
+            .environment(DemoConfiguration())
     }
 }
