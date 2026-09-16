@@ -31,7 +31,7 @@ enum DataDogConfig {
 struct LogEntry {
     let level: CheckoutLogLevel
     let message: String
-    let timestamp: String
+    let date: Date
     let environment: String
     let threadName: String
     let attributes: [String: String]
@@ -100,12 +100,6 @@ actor DataDogLoggerProvider: LoggerProvider {
     private var flushTask: Task<Void, Never>?
     private var device = DeviceInfo()
 
-    private let dateFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
     init(service: String, clientToken: String = DataDogConfig.clientToken) {
         self.formatter = DataDogLogFormatter(
             loggerName: service,
@@ -125,47 +119,25 @@ actor DataDogLoggerProvider: LoggerProvider {
     }
 
     nonisolated func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?) {
-        let date = Date()
-        let environment = DataDogConfig.environment
-        let threadName = Self.threadName()
-        Task { [weak self] in
-            await self?.enqueue(
-                level: level,
-                message: message,
-                attributes: attributes ?? [:],
-                date: date,
-                environment: environment,
-                threadName: threadName
-            )
-        }
+        let entry = LogEntry(
+            level: level,
+            message: message,
+            date: Date(),
+            environment: DataDogConfig.environment,
+            threadName: Self.threadName(),
+            attributes: attributes ?? [:]
+        )
+        Task { [weak self] in await self?.enqueue(entry) }
     }
 
     private static func threadName() -> String {
-        if Thread.isMainThread {
-            return "main"
-        }
-        if let name = Thread.current.name, !name.isEmpty {
-            return name
-        }
+        if Thread.isMainThread { return "main" }
+        if let name = Thread.current.name, !name.isEmpty { return name }
         return "background"
     }
 
-    private func enqueue(
-        level: CheckoutLogLevel,
-        message: String,
-        attributes: [String: String],
-        date: Date,
-        environment: String,
-        threadName: String
-    ) {
-        queue.append(LogEntry(
-            level: level,
-            message: message,
-            timestamp: dateFormatter.string(from: date),
-            environment: environment,
-            threadName: threadName,
-            attributes: attributes
-        ))
+    private func enqueue(_ entry: LogEntry) {
+        queue.append(entry)
 
         if queue.count >= Self.batchSize {
             Task { await flush() }

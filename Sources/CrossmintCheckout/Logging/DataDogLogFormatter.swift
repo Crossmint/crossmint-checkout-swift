@@ -7,67 +7,38 @@
 
 import Foundation
 
-struct DataDogLogFormatter: Sendable {
-    static let serviceName = "crossmint-ios-sdk"
-    static let sourceName = "ios"
-    static let platform = "ios"
-    static let deviceBrand = "Apple"
-
+struct DataDogLogFormatter {
     let loggerName: String
     let sessionId: String
     let hostname: String
 
+    private let dateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
     func payload(for entry: LogEntry, device: DeviceInfo) -> [String: Any] {
-        var log: [String: Any] = entry.attributes
-        log.merge(reservedAttributes(for: entry, device: device)) { _, reserved in reserved }
-        log.merge(structuredAttributes(for: entry, device: device)) { _, reserved in reserved }
-        return log
+        (entry.attributes as [String: Any]).merging(datadogAttributes(for: entry, device: device)) { _, reserved in reserved }
     }
 
-    private func reservedAttributes(for entry: LogEntry, device: DeviceInfo) -> [String: Any] {
+    private func datadogAttributes(for entry: LogEntry, device: DeviceInfo) -> [String: Any] {
         [
             "message": entry.message,
             "status": entry.status,
-            "service": Self.serviceName,
-            "ddsource": Self.sourceName,
-            "ddtags": tags(environment: entry.environment, appVersion: device.appVersion),
+            "service": "crossmint-ios-sdk",
+            "ddsource": "ios",
+            "ddtags": "env:\(entry.environment),sdk_version:\(SDKVersion.version),version:\(device.appVersion)",
             "hostname": hostname,
-            "timestamp": entry.timestamp,
+            "timestamp": dateFormatter.string(from: entry.date),
             "dd-session_id": sessionId,
-            "platform": Self.platform,
+            "platform": "ios",
             "version": device.appVersion,
             "build_version": device.appBuild,
-            "sdk_name": SDKVersion.name
+            "sdk_name": SDKVersion.name,
+            "os": ["name": device.osName, "version": device.osVersion, "build": device.osBuild],
+            "device": ["name": device.name, "model": device.model, "brand": "Apple", "architecture": device.architecture],
+            "logger": ["name": loggerName, "version": SDKVersion.version, "thread_name": entry.threadName, "app_id": hostname]
         ]
-    }
-
-    private func structuredAttributes(for entry: LogEntry, device: DeviceInfo) -> [String: Any] {
-        [
-            "os": [
-                "name": device.osName,
-                "version": device.osVersion,
-                "build": device.osBuild
-            ],
-            "device": [
-                "name": device.name,
-                "model": device.model,
-                "brand": Self.deviceBrand,
-                "architecture": device.architecture
-            ],
-            "logger": [
-                "name": loggerName,
-                "version": SDKVersion.version,
-                "thread_name": entry.threadName,
-                "app_id": hostname
-            ]
-        ]
-    }
-
-    private func tags(environment: String, appVersion: String) -> String {
-        [
-            "env:\(environment)",
-            "sdk_version:\(SDKVersion.version)",
-            "version:\(appVersion)"
-        ].joined(separator: ",")
     }
 }
