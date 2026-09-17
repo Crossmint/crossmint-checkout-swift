@@ -47,14 +47,15 @@ struct LogEntry {
 }
 
 struct DeviceInfo: Sendable {
-    var model = "unknown"
-    var name = "unknown"
-    var osName = "unknown"
-    var osVersion = "unknown"
-    var osBuild = "unknown"
-    var architecture = "unknown"
-    var appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-    var appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+    var model: String?
+    var name: String?
+    var brand: String?
+    var osName: String?
+    var osVersion: String?
+    var osBuild: String?
+    var architecture: String?
+    var appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    var appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
 
     @MainActor
     static func capture() -> DeviceInfo {
@@ -62,6 +63,7 @@ struct DeviceInfo: Sendable {
         return DeviceInfo(
             model: device.model,
             name: device.name,
+            brand: "Apple",
             osName: device.systemName,
             osVersion: device.systemVersion,
             osBuild: osBuild(),
@@ -69,15 +71,17 @@ struct DeviceInfo: Sendable {
         )
     }
 
-    private static func osBuild() -> String {
+    private static func osBuild() -> String? {
         var size = 0
         sysctlbyname("kern.osversion", nil, &size, nil, 0)
+        guard size > 0 else { return nil }
         var build = [UInt8](repeating: 0, count: size)
         sysctlbyname("kern.osversion", &build, &size, nil, 0)
-        return String(decoding: build.prefix(while: { $0 != 0 }), as: UTF8.self)
+        let value = String(decoding: build.prefix(while: { $0 != 0 }), as: UTF8.self)
+        return value.isEmpty ? nil : value
     }
 
-    private static func architecture() -> String {
+    private static func architecture() -> String? {
         #if arch(arm64e)
         return "arm64e"
         #elseif arch(arm64)
@@ -85,7 +89,7 @@ struct DeviceInfo: Sendable {
         #elseif arch(x86_64)
         return "x86_64"
         #else
-        return "unknown"
+        return nil
         #endif
     }
 }
@@ -104,7 +108,7 @@ actor DataDogLoggerProvider: LoggerProvider {
         self.formatter = DataDogLogFormatter(
             loggerName: service,
             sessionId: UUID().uuidString,
-            hostname: Bundle.main.bundleIdentifier ?? "unknown"
+            hostname: Bundle.main.bundleIdentifier
         )
         let intake = "\(datadogIntakeUrl)/\(clientToken)"
         let encoded = intake.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? intake

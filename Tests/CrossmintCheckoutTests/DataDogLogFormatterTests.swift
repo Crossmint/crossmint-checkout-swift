@@ -12,9 +12,10 @@ import Testing
 struct DataDogLogFormatterTests {
     let formatter = DataDogLogFormatter(loggerName: "checkout", sessionId: "0123456789abcdef", hostname: "com.example.app")
 
-    let device = DeviceInfo(
+    static let device = DeviceInfo(
         model: "iPhone",
         name: "Tomas iPhone",
+        brand: "Apple",
         osName: "iOS",
         osVersion: "26.0",
         osBuild: "23A340",
@@ -23,12 +24,12 @@ struct DataDogLogFormatterTests {
         appBuild: "42"
     )
 
-    func payload(
+    func entry(
         level: CheckoutLogLevel = .info,
         environment: String = "production",
         attributes: [String: String] = [:]
-    ) -> [String: Any] {
-        let entry = LogEntry(
+    ) -> LogEntry {
+        LogEntry(
             level: level,
             message: "order updated",
             date: Date(timeIntervalSince1970: 1_789_466_400),
@@ -36,7 +37,15 @@ struct DataDogLogFormatterTests {
             threadName: "main",
             attributes: attributes
         )
-        return formatter.payload(for: entry, device: device)
+    }
+
+    func payload(
+        level: CheckoutLogLevel = .info,
+        environment: String = "production",
+        attributes: [String: String] = [:],
+        device: DeviceInfo = Self.device
+    ) -> [String: Any] {
+        formatter.payload(for: entry(level: level, environment: environment, attributes: attributes), device: device)
     }
 
     @Test(arguments: ["production", "staging"])
@@ -105,5 +114,28 @@ struct DataDogLogFormatterTests {
 
     @Test func serializesToJson() {
         #expect(JSONSerialization.isValidJSONObject([payload(attributes: ["orderId": "order-1"])]))
+    }
+
+    @Test func omitsDeviceFieldsBeforeCapture() throws {
+        let payload = payload(device: DeviceInfo(appVersion: nil, appBuild: nil))
+
+        #expect(payload["os"] == nil)
+        #expect(payload["device"] == nil)
+        #expect(payload["version"] == nil)
+        #expect(payload["build_version"] == nil)
+        #expect(payload["ddtags"] as? String == "env:production,sdk_version:\(SDKVersion.version)")
+        let json = try JSONSerialization.data(withJSONObject: payload)
+        #expect(!String(decoding: json, as: UTF8.self).contains("unknown"))
+    }
+
+    @Test func omitsOnlyTheFieldsThatAreMissing() {
+        var device = Self.device
+        device.osBuild = nil
+        let formatter = DataDogLogFormatter(loggerName: "checkout", sessionId: "0123456789abcdef", hostname: nil)
+        let payload = formatter.payload(for: entry(), device: device)
+
+        #expect(payload["os"] as? [String: String] == ["name": "iOS", "version": "26.0"])
+        #expect(payload["hostname"] == nil)
+        #expect(payload["logger"] as? [String: String] == ["name": "checkout", "version": SDKVersion.version, "thread_name": "main"])
     }
 }
