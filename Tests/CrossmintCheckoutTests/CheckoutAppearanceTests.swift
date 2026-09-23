@@ -43,3 +43,35 @@ import Testing
     #expect(json.contains("\"text\":\"#FFFFFF\""))
     #expect(json.contains("\"background\":\"#0076F3\""))
 }
+
+@Test func fontsSerializeWithCheckoutKeys() throws {
+    let appearance = CheckoutAppearance(
+        fonts: [
+            CheckoutFontSource(cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap")
+        ],
+        variables: CheckoutAppearanceVariables(
+            fontFamily: "Inter, sans-serif",
+            fontSizeUnit: "4px"
+        )
+    )
+
+    let json = try appearance.toJSON()
+
+    #expect(json.contains("\"fonts\":[{\"cssSrc\":\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap\"}]"))
+    #expect(json.contains("\"fontFamily\":\"Inter, sans-serif\""))
+    #expect(json.contains("\"fontSizeUnit\":\"4px\""))
+}
+
+@Test func unsetFontsAreOmitted() throws {
+    let appearance = CheckoutAppearance(
+        variables: CheckoutAppearanceVariables(
+            colors: CheckoutVariablesColorStyle(accent: "#0076F3")
+        )
+    )
+
+    let json = try appearance.toJSON()
+
+    #expect(!json.contains("fonts"))
+    #expect(!json.contains("fontFamily"))
+    #expect(!json.contains("fontSizeUnit"))
+}

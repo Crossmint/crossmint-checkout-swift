@@ -7,6 +7,26 @@
 
 import Foundation
 
+// MARK: - Font Sources
+
+/// A stylesheet that loads a custom font into the checkout.
+///
+/// Set the URL of a Google Fonts stylesheet, for example
+/// `"https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"`.
+/// The checkout ignores sources from other domains.
+///
+/// To use the loaded font, set its name in ``CheckoutAppearanceVariables/fontFamily`` or in
+/// ``CheckoutFontStyle/family`` of a rule.
+public struct CheckoutFontSource: Codable, Sendable {
+    /// The URL of the stylesheet that declares the font.
+    public let cssSrc: String
+
+    /// Creates a font source.
+    public init(cssSrc: String) {
+        self.cssSrc = cssSrc
+    }
+}
+
 // MARK: - Base Styles
 
 /// The font of one checkout element.
@@ -327,11 +347,26 @@ public struct CheckoutVariablesColorStyle: Codable, Sendable {
 /// Use variables to set the base look once. Use ``CheckoutAppearanceRules`` to override
 /// single elements.
 public struct CheckoutAppearanceVariables: Codable, Sendable {
+    /// The CSS `font-family` value of all the checkout text, for example `"Inter, sans-serif"`.
+    ///
+    /// To use a font that the device does not have, load it with ``CheckoutAppearance/fonts``.
+    public let fontFamily: String?
+    /// The base unit of all the checkout font sizes, for example `"4px"`.
+    ///
+    /// The checkout sets each font size as a multiple of this unit. A
+    /// ``CheckoutFontStyle/size`` in a rule has priority over it.
+    public let fontSizeUnit: String?
     /// The global colors.
     public let colors: CheckoutVariablesColorStyle?
 
     /// Creates the variable set.
-    public init(colors: CheckoutVariablesColorStyle? = nil) {
+    public init(
+        fontFamily: String? = nil,
+        fontSizeUnit: String? = nil,
+        colors: CheckoutVariablesColorStyle? = nil
+    ) {
+        self.fontFamily = fontFamily
+        self.fontSizeUnit = fontSizeUnit
         self.colors = colors
     }
 }
@@ -340,12 +375,18 @@ public struct CheckoutAppearanceVariables: Codable, Sendable {
 
 /// The visual customization of ``CrossmintEmbeddedCheckout``.
 ///
-/// Set ``variables`` for the global look. Set ``rules`` for per-element overrides. A rule
-/// has priority over a variable for the element it targets.
+/// Set ``fonts`` to load custom fonts. Set ``variables`` for the global look. Set ``rules``
+/// for per-element overrides. A rule has priority over a variable for the element it targets.
 ///
 /// ```swift
 /// let appearance = CheckoutAppearance(
+///     fonts: [
+///         CheckoutFontSource(
+///             cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+///         )
+///     ],
 ///     variables: CheckoutAppearanceVariables(
+///         fontFamily: "Inter, sans-serif",
 ///         colors: CheckoutVariablesColorStyle(accent: "#0066FF")
 ///     ),
 ///     rules: CheckoutAppearanceRules(
@@ -354,6 +395,8 @@ public struct CheckoutAppearanceVariables: Codable, Sendable {
 /// )
 /// ```
 public struct CheckoutAppearance: Codable, Sendable {
+    /// The stylesheets that load custom fonts into the checkout.
+    public let fonts: [CheckoutFontSource]?
     /// The global style variables.
     public let variables: CheckoutAppearanceVariables?
     /// The per-element style overrides.
@@ -361,9 +404,11 @@ public struct CheckoutAppearance: Codable, Sendable {
 
     /// Creates an appearance.
     public init(
+        fonts: [CheckoutFontSource]? = nil,
         variables: CheckoutAppearanceVariables? = nil,
         rules: CheckoutAppearanceRules? = nil
     ) {
+        self.fonts = fonts
         self.variables = variables
         self.rules = rules
     }
