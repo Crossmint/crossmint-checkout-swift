@@ -96,11 +96,7 @@ CrossmintEmbeddedCheckout(
     orderId: orderId,
     clientSecret: clientSecret,
     appearance: CheckoutAppearance(
-        fonts: [
-            CheckoutFontSource(
-                cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-            )
-        ],
+        fonts: [.googleFonts("Inter", weights: [.regular, .semibold])],
         variables: CheckoutAppearanceVariables(
             fontFamily: "Inter, sans-serif",
             colors: CheckoutVariablesColorStyle(
@@ -113,6 +109,7 @@ CrossmintEmbeddedCheckout(
         rules: CheckoutAppearanceRules(
             primaryButton: CheckoutPrimaryButtonRule(
                 borderRadius: "8px",
+                font: CheckoutFontStyle(size: .px(17), weight: .semibold),
                 colors: CheckoutColorStyle(text: "#FFFFFF", background: "#6C5CE7")
             )
         )
@@ -120,7 +117,7 @@ CrossmintEmbeddedCheckout(
 )
 ```
 
-Font sources must be Google Fonts stylesheet URLs. The checkout ignores sources from other domains.
+Load fonts with `.googleFonts(_:weights:)`, or with `.cssURL(_:)` for other Google Fonts links. The checkout ignores stylesheets from other domains.
 
 > **Note:** `lineItems` and `recipient` are accepted as parameters but not yet implemented. Passing either will display an error.
 

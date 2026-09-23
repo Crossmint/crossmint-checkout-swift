@@ -3,6 +3,7 @@
 //  CrossmintCheckoutTests
 //
 
+import Foundation
 import Testing
 @testable import CrossmintCheckout
 
@@ -46,12 +47,10 @@ import Testing
 
 @Test func fontsSerializeWithCheckoutKeys() throws {
     let appearance = CheckoutAppearance(
-        fonts: [
-            CheckoutFontSource(cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap")
-        ],
+        fonts: [.googleFonts("Inter", weights: [.regular, .semibold])],
         variables: CheckoutAppearanceVariables(
             fontFamily: "Inter, sans-serif",
-            fontSizeUnit: "4px"
+            fontSizeUnit: .px(4)
         )
     )
 
@@ -60,6 +59,59 @@ import Testing
     #expect(json.contains("\"fonts\":[{\"cssSrc\":\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap\"}]"))
     #expect(json.contains("\"fontFamily\":\"Inter, sans-serif\""))
     #expect(json.contains("\"fontSizeUnit\":\"4px\""))
+}
+
+@Test func googleFontsJoinsFamilyWordsAndSortsWeights() {
+    let source = CheckoutFontSource.googleFonts("Chakra Petch", weights: [.bold, 400, .bold, CheckoutFontWeight("bold")])
+
+    #expect(source.cssSrc == "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&display=swap")
+}
+
+@Test func googleFontsWithoutNumericWeightsOmitsWeightAxis() {
+    let source = CheckoutFontSource.googleFonts("Inter", weights: [])
+
+    #expect(source.cssSrc == "https://fonts.googleapis.com/css2?family=Inter&display=swap")
+}
+
+@Test func cssURLKeepsTheGivenURL() throws {
+    let url = try #require(URL(string: "https://fonts.googleapis.com/css2?family=Lora:ital@1&display=swap"))
+
+    #expect(CheckoutFontSource.cssURL(url).cssSrc == url.absoluteString)
+}
+
+@Test(arguments: [
+    (CheckoutFontSize.px(16), "16px"),
+    (.px(15.5), "15.5px"),
+    (.rem(1.25), "1.25rem"),
+    (.em(2), "2em"),
+    (.custom("clamp(14px, 4vw, 18px)"), "clamp(14px, 4vw, 18px)")
+])
+func fontSizeEncodesAsCSSValue(size: CheckoutFontSize, expected: String) throws {
+    #expect(size.cssValue == expected)
+    #expect(try size.toJSON() == "\"\(expected)\"")
+}
+
+@Test(arguments: [
+    (CheckoutFontWeight.semibold, "600"),
+    (450, "450"),
+    (CheckoutFontWeight("bold"), "bold")
+])
+func fontWeightEncodesAsCSSValue(weight: CheckoutFontWeight, expected: String) throws {
+    #expect(try weight.toJSON() == "\"\(expected)\"")
+}
+
+@Test func ruleFontSerializesSizeAndWeightAsStrings() throws {
+    let appearance = CheckoutAppearance(
+        rules: CheckoutAppearanceRules(
+            primaryButton: CheckoutPrimaryButtonRule(
+                font: CheckoutFontStyle(family: "Inter", size: .px(17), weight: 600)
+            )
+        )
+    )
+
+    let json = try appearance.toJSON()
+
+    #expect(json.contains("\"font\":{\"family\":\"Inter\",\"size\":\"17px\",\"weight\":\"600\"}"))
 }
 
 @Test func unsetFontsAreOmitted() throws {
@@ -74,4 +126,27 @@ import Testing
     #expect(!json.contains("fonts"))
     #expect(!json.contains("fontFamily"))
     #expect(!json.contains("fontSizeUnit"))
+}
+
+@available(*, deprecated)
+@Test func stringFontStyleStillEncodesTheSameValues() throws {
+    let size: String? = "17px"
+    let weight: String? = "600"
+    let appearance = CheckoutAppearance(
+        rules: CheckoutAppearanceRules(
+            label: CheckoutLabelRule(font: CheckoutFontStyle(family: "Inter", size: size, weight: weight))
+        )
+    )
+
+    let json = try appearance.toJSON()
+
+    #expect(json.contains("\"font\":{\"family\":\"Inter\",\"size\":\"17px\",\"weight\":\"600\"}"))
+}
+
+@available(*, deprecated)
+@Test func stringLiteralFontStyleMapsToTypedValues() {
+    let style = CheckoutFontStyle(size: "17px", weight: "600")
+
+    #expect(style.size == .custom("17px"))
+    #expect(style.weight == CheckoutFontWeight(600))
 }
