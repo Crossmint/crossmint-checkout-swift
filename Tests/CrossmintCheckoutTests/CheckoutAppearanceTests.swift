@@ -66,7 +66,7 @@ import Testing
         CheckoutFontSource.googleFonts("Chakra Petch", weights: [.bold, 400, .bold, CheckoutFontWeight("bold")]),
         "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&display=swap"
     ),
-    (.googleFonts("Inter", weights: []), "https://fonts.googleapis.com/css2?family=Inter&display=swap")
+    (.googleFonts("Inter"), "https://fonts.googleapis.com/css2?family=Inter&display=swap")
 ])
 func googleFontsBuildsStylesheetURL(source: CheckoutFontSource, expected: String) {
     #expect(source.cssSrc == expected)
@@ -84,7 +84,13 @@ func fontSizeEncodesAsCSSValue(size: CheckoutFontSize, expected: String) throws 
 }
 
 @Test(arguments: [
-    (CheckoutFontWeight.semibold, "600"),
+    (CheckoutFontWeight(1), "1"),
+    (.thin, "100"),
+    (.extraLight, "200"),
+    (.semibold, "600"),
+    (.extraBold, "800"),
+    (.black, "900"),
+    (1000, "1000"),
     (450, "450"),
     (CheckoutFontWeight("bold"), "bold")
 ])

@@ -29,17 +29,18 @@ public struct CheckoutFontSource: Codable, Sendable, Hashable {
     /// - Parameters:
     ///   - family: The name of the font family as Google Fonts shows it, for example `"Chakra Petch"`.
     ///   - weights: The weights to load. Only number weights apply, such as ``CheckoutFontWeight/semibold``
-    ///     or `600`. A weight such as `CheckoutFontWeight("bold")` has no effect here.
+    ///     or `600`. A weight such as `CheckoutFontWeight("bold")` has no effect here. If the value is `nil`,
+    ///     Google Fonts loads the regular weight.
     public static func googleFonts(
         _ family: String,
-        weights: [CheckoutFontWeight] = [.regular]
+        weights: [CheckoutFontWeight]? = nil
     ) -> CheckoutFontSource {
         let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.")
         let name = family
             .split(separator: " ")
             .map { $0.addingPercentEncoding(withAllowedCharacters: allowed) ?? String($0) }
             .joined(separator: "+")
-        let numericWeights = Set(weights.compactMap { Int($0.cssValue) }).sorted()
+        let numericWeights = Set((weights ?? []).compactMap { Int($0.cssValue) }).sorted()
         let axis = numericWeights.isEmpty ? "" : ":wght@" + numericWeights.map(String.init).joined(separator: ";")
         return CheckoutFontSource(cssSrc: "https://fonts.googleapis.com/css2?family=\(name)\(axis)&display=swap")
     }
@@ -92,15 +93,15 @@ public enum CheckoutFontSize: Codable, Sendable, Hashable {
 
 /// A CSS font weight.
 ///
-/// Use a named weight such as ``semibold``, or a number from `100` to `900`. Use
+/// Use a named weight such as ``semibold``, or a number from `1` to `1000`. Use
 /// ``init(_:)-(String)`` for a different CSS `font-weight` value, for example `"bold"`.
 public struct CheckoutFontWeight: Codable, Sendable, Hashable, ExpressibleByIntegerLiteral {
     let cssValue: String
 
     /// The weight `100`.
-    public static let ultraLight = CheckoutFontWeight(100)
+    public static let thin = CheckoutFontWeight(100)
     /// The weight `200`.
-    public static let thin = CheckoutFontWeight(200)
+    public static let extraLight = CheckoutFontWeight(200)
     /// The weight `300`.
     public static let light = CheckoutFontWeight(300)
     /// The weight `400`.
@@ -112,12 +113,15 @@ public struct CheckoutFontWeight: Codable, Sendable, Hashable, ExpressibleByInte
     /// The weight `700`.
     public static let bold = CheckoutFontWeight(700)
     /// The weight `800`.
-    public static let heavy = CheckoutFontWeight(800)
+    public static let extraBold = CheckoutFontWeight(800)
     /// The weight `900`.
     public static let black = CheckoutFontWeight(900)
 
     /// Creates a weight from a number, for example `600`.
+    ///
+    /// - Precondition: `value` is in the range `1...1000`.
     public init(_ value: Int) {
+        precondition((1...1000).contains(value), "A font weight must be in the range 1...1000, but it is \(value).")
         cssValue = String(value)
     }
 
