@@ -169,3 +169,27 @@ func colorEncodesAsCSSValue(color: CheckoutColor, expected: String) throws {
     #expect(font.size == "1.5rem")
     #expect(font.weight == "600")
 }
+
+@Test(arguments: [
+    (CheckoutAppearanceRules(destinationInput: CheckoutDestinationInputRule(isHidden: true)), "{\"DestinationInput\":{\"display\":\"hidden\"}}"),
+    (CheckoutAppearanceRules(destinationInput: CheckoutDestinationInputRule()), "{\"DestinationInput\":{}}"),
+    (CheckoutAppearanceRules(receiptEmailInput: CheckoutReceiptEmailInputRule(isHidden: true)), "{\"ReceiptEmailInput\":{\"display\":\"hidden\"}}"),
+    (CheckoutAppearanceRules(globalMessage: CheckoutGlobalMessageRule(isHidden: true)), "{\"GlobalMessage\":{\"display\":\"hidden\"}}"),
+    (CheckoutAppearanceRules(globalMessage: CheckoutGlobalMessageRule(isHidden: false)), "{\"GlobalMessage\":{\"display\":\"visible\"}}"),
+    (CheckoutAppearanceRules(globalMessage: CheckoutGlobalMessageRule()), "{\"GlobalMessage\":{}}")
+])
+func visibilityRulesSerializeAsDisplayValues(rules: CheckoutAppearanceRules, expected: String) throws {
+    #expect(try rules.toJSON() == expected)
+}
+
+@available(*, deprecated)
+@Test func stringDisplayIsSentAsIsAndReadsBack() throws {
+    let destination = CheckoutDestinationInputRule(display: "none")
+    let message = CheckoutGlobalMessageRule(display: "visible")
+
+    #expect(try destination.toJSON() == "{\"display\":\"none\"}")
+    #expect(destination.display == "none")
+    #expect(destination.isHidden == false)
+    #expect(message.isHidden == false)
+    #expect(CheckoutReceiptEmailInputRule(display: "hidden").isHidden)
+}

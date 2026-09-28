@@ -326,41 +326,118 @@ public struct CheckoutStateStyle: Codable, Sendable {
 /// The rule for the destination input, where the buyer enters the wallet address or
 /// email that receives the purchase.
 public struct CheckoutDestinationInputRule: Codable, Sendable {
-    /// The CSS `display` value of the input.
-    ///
-    /// The value `"hidden"` removes the input from the page.
-    public let display: String?
+    private let displayValue: String?
+
+    enum CodingKeys: String, CodingKey {
+        case displayValue = "display"
+    }
+
+    /// A Boolean value that shows if the checkout hides the input.
+    public var isHidden: Bool {
+        displayValue == "hidden"
+    }
 
     /// Creates a destination input rule.
+    ///
+    /// - Parameter isHidden: If the value is `true`, the checkout removes the input from the page.
+    public init(isHidden: Bool = false) {
+        displayValue = isHidden ? "hidden" : nil
+    }
+
+    /// Creates a destination input rule from a CSS `display` value.
+    ///
+    /// Use ``init(isHidden:)`` instead.
+    @available(*, deprecated, message: "Use init(isHidden:) instead.")
+    @_disfavoredOverload
     public init(display: String? = nil) {
-        self.display = display
+        displayValue = display
+    }
+
+    /// The CSS `display` value of the input.
+    @available(*, deprecated, message: "Use isHidden instead.")
+    public var display: String? {
+        displayValue
     }
 }
 
 /// The rule for the receipt email input.
 public struct CheckoutReceiptEmailInputRule: Codable, Sendable {
-    /// The CSS `display` value of the input.
-    ///
-    /// The value `"hidden"` removes the input from the page. When the buyer pays by card,
-    /// the checkout always shows the input.
-    public let display: String?
+    private let displayValue: String?
+
+    enum CodingKeys: String, CodingKey {
+        case displayValue = "display"
+    }
+
+    /// A Boolean value that shows if the checkout hides the input.
+    public var isHidden: Bool {
+        displayValue == "hidden"
+    }
 
     /// Creates a receipt email input rule.
+    ///
+    /// - Parameter isHidden: If the value is `true`, the checkout removes the input from the page.
+    ///   When the buyer pays by card, the checkout always shows the input.
+    public init(isHidden: Bool = false) {
+        displayValue = isHidden ? "hidden" : nil
+    }
+
+    /// Creates a receipt email input rule from a CSS `display` value.
+    ///
+    /// Use ``init(isHidden:)`` instead.
+    @available(*, deprecated, message: "Use init(isHidden:) instead.")
+    @_disfavoredOverload
     public init(display: String? = nil) {
-        self.display = display
+        displayValue = display
+    }
+
+    /// The CSS `display` value of the input.
+    @available(*, deprecated, message: "Use isHidden instead.")
+    public var display: String? {
+        displayValue
     }
 }
 
 /// The rule for the global message the checkout shows above the payment form.
 public struct CheckoutGlobalMessageRule: Codable, Sendable {
-    /// The CSS `display` value of the message.
+    private let displayValue: String?
+
+    enum CodingKeys: String, CodingKey {
+        case displayValue = "display"
+    }
+
+    /// A Boolean value that shows if the checkout hides the message.
     ///
-    /// The value `"hidden"` removes the message. The value `"visible"` shows it.
-    public let display: String?
+    /// The value is `nil` when the checkout uses its default.
+    public var isHidden: Bool? {
+        switch displayValue {
+        case "hidden": true
+        case "visible": false
+        default: nil
+        }
+    }
 
     /// Creates a global message rule.
+    ///
+    /// - Parameter isHidden: If the value is `true`, the checkout removes the message. If the
+    ///   value is `false`, the checkout shows the message. If the value is `nil`, the checkout
+    ///   uses its default.
+    public init(isHidden: Bool? = nil) {
+        displayValue = isHidden.map { $0 ? "hidden" : "visible" }
+    }
+
+    /// Creates a global message rule from a CSS `display` value.
+    ///
+    /// Use ``init(isHidden:)`` instead.
+    @available(*, deprecated, message: "Use init(isHidden:) instead.")
+    @_disfavoredOverload
     public init(display: String? = nil) {
-        self.display = display
+        displayValue = display
+    }
+
+    /// The CSS `display` value of the message.
+    @available(*, deprecated, message: "Use isHidden instead.")
+    public var display: String? {
+        displayValue
     }
 }
 

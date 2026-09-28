@@ -142,7 +142,7 @@ import UIKit
         apiKey: "ck_staging_test",
         appearance: CheckoutAppearance(
             rules: CheckoutAppearanceRules(
-                globalMessage: CheckoutGlobalMessageRule(display: "visible")
+                globalMessage: CheckoutGlobalMessageRule(isHidden: false)
             )
         )
     )
