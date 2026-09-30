@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct CheckoutDemoApp: App {
+    @State private var configuration = DemoConfiguration()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(configuration)
         }
     }
 }

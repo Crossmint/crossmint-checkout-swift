@@ -1,0 +1,10 @@
+// Base build settings for CheckoutDemo.
+//
+// The Crossmint client API key is not stored in this repository. Copy
+// Secrets.example.xcconfig to Secrets.xcconfig and put your own key there;
+// Secrets.xcconfig is gitignored, and the optional include below means the
+// project still builds when the file is absent.
+
+CROSSMINT_API_KEY =
+
+#include? "Secrets.xcconfig"
