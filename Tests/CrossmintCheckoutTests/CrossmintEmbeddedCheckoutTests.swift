@@ -5,7 +5,9 @@
 //  Created by Robin Curbelo on 2/25/26.
 //
 
+import SwiftUI
 import Testing
+import UIKit
 @testable import CrossmintCheckout
 
 @MainActor
@@ -140,7 +142,7 @@ import Testing
         apiKey: "ck_staging_test",
         appearance: CheckoutAppearance(
             rules: CheckoutAppearanceRules(
-                globalMessage: CheckoutGlobalMessageRule(display: "visible")
+                globalMessage: CheckoutGlobalMessageRule(isHidden: false)
             )
         )
     )
@@ -148,6 +150,25 @@ import Testing
     let url = try checkout.generateCheckoutUrl()
     #expect(url.contains("GlobalMessage"))
     #expect(url.contains("visible"))
+}
+
+@MainActor
+@Test(arguments: [(ColorScheme.light, "#000000"), (.dark, "#FFFFFF")])
+func urlResolvesDynamicColorsForTheColorScheme(colorScheme: ColorScheme, expected: String) throws {
+    let dynamic = UIColor { $0.userInterfaceStyle == .dark ? .white : .black }
+    let checkout = CrossmintEmbeddedCheckout(
+        apiKey: "ck_staging_test",
+        appearance: CheckoutAppearance(
+            variables: CheckoutAppearanceVariables(
+                colors: CheckoutVariablesColorStyle(textPrimary: .uiColor(dynamic), accent: .color(Color(dynamic)))
+            )
+        )
+    )
+
+    let url = try checkout.generateCheckoutUrl(colorScheme: colorScheme)
+    let appearance = URLComponents(string: url)?.queryItems?.first { $0.name == "appearance" }?.value
+
+    #expect(appearance == "{\"variables\":{\"colors\":{\"accent\":\"\(expected)\",\"textPrimary\":\"\(expected)\"}}}")
 }
 
 @MainActor

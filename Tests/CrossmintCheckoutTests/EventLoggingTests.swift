@@ -48,6 +48,22 @@ final class EventLoggingTests {
         #expect(spy.entries.count == 1)
     }
 
+    @Test(arguments: ["0076F3", "#0076F", "#GGGGGG"])
+    func invalidHexColorLogsAnErrorAndIsSentAsIs(value: String) throws {
+        let color = CheckoutColor.hex(value)
+
+        let entry = spy.entry(LogEvents.appearanceColorInvalid)
+        #expect(entry?.level == .error)
+        #expect(entry?.attributes?["value"] == value)
+        #expect(try color.toJSON() == "\"\(value)\"")
+    }
+
+    @Test func validHexColorDoesNotLog() {
+        _ = CheckoutColor.hex("#0076F3")
+
+        #expect(spy.entry(LogEvents.appearanceColorInvalid) == nil)
+    }
+
     @Test func loadSuccessLogsTheDuration() {
         let coordinator = makeCoordinator()
         let webView = WKWebView()

@@ -30,8 +30,8 @@ struct ContentView: View {
             ),
             appearance: CheckoutAppearance(
                 rules: CheckoutAppearanceRules(
-                    destinationInput: CheckoutDestinationInputRule(display: "hidden"),
-                    receiptEmailInput: CheckoutReceiptEmailInputRule(display: "hidden")
+                    destinationInput: CheckoutDestinationInputRule(isHidden: true),
+                    receiptEmailInput: CheckoutReceiptEmailInputRule(isHidden: true)
                 )
             ),
             identityVerificationHandling: .external,

@@ -9,6 +9,7 @@ import Foundation
 
 enum LogEvents {
     static let configError = "checkout.config.error"
+    static let appearanceColorInvalid = "checkout.appearance.color.invalid"
 
     static let webviewUrlInvalid = "checkout.webview.url.invalid"
     static let webviewLoadStart = "checkout.webview.load.start"

@@ -8,8 +8,9 @@
 import Foundation
 
 extension Encodable {
-    func toJSON() throws -> String {
+    func toJSON(userInfo: [CodingUserInfoKey: any Sendable] = [:]) throws -> String {
         let encoder = JSONEncoder()
+        encoder.userInfo = userInfo
         encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
         let data = try encoder.encode(self)
 
