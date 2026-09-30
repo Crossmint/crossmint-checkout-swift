@@ -37,15 +37,15 @@ enum CheckoutEvent {
 
         switch event {
         case .orderUpdated:
-            guard let update = BridgeDecoding.payload(CheckoutOrderUpdate.self, from: message) else { return nil }
+            guard let update = BridgeDecoding.payload(CheckoutOrderUpdate.self, from: message, event: name) else { return nil }
             self = .orderUpdated(update)
         case .orderCreationFailed:
-            guard let payload = BridgeDecoding.payload(FailurePayload.self, from: message) else { return nil }
+            guard let payload = BridgeDecoding.payload(FailurePayload.self, from: message, event: name) else { return nil }
             self = .orderCreationFailed(payload.errorMessage)
         case .cryptoLoad:
             self = .cryptoRequest(.load)
         case .cryptoConnectWalletShow:
-            let payload = BridgeDecoding.payload(ShowPayload.self, from: message)
+            let payload = BridgeDecoding.payload(ShowPayload.self, from: message, event: name)
             self = .cryptoRequest(.connectWalletShow(payload?.show ?? true))
         case .cryptoSendTransaction:
             self = .cryptoRequest(.sendTransaction)

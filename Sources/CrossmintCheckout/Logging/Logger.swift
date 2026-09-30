@@ -33,7 +33,12 @@ struct Logger: Sendable {
         set { levelBox.value = newValue }
     }
 
-    static let checkout = Logger(category: "checkout")
+    private static let checkoutBox = LockedValue(Logger(category: "checkout"))
+
+    static var checkout: Logger {
+        get { checkoutBox.value }
+        set { checkoutBox.value = newValue }
+    }
 
     private let providers: [LoggerProvider]
 

@@ -12,7 +12,8 @@ enum CredentialScrubber {
         (#"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+"#, "[REDACTED_JWT]"),
         (#"\b(?:ck|sk)_(?:development|staging|production)_[A-Za-z0-9]{16,}"#, "[REDACTED_API_KEY]"),
         (#""(apiKey|clientSecret|orderClientSecret|sessionToken)"\s*:\s*"[^"]*""#, #""$1":"[REDACTED]""#),
-        (#"\b(apiKey|clientSecret|credentials)=[^&\s"']+"#, "$1=[REDACTED]")
+        (#"\b(apiKey|clientSecret|credentials)=[^&\s"']+"#, "$1=[REDACTED]"),
+        (#"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#, "[REDACTED_EMAIL]")
     ].compactMap { pattern, replacement in
         (try? NSRegularExpression(pattern: pattern)).map { ($0, replacement) }
     }

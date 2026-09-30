@@ -37,6 +37,9 @@ public struct CrossmintEmbeddedCheckout: View {
     private var onOrderUpdatedHandler: ((CheckoutOrderUpdate) -> Void)?
     private var onOrderCreationFailedHandler: ((String) -> Void)?
     private let explicitEnvironment: CheckoutEnvironment?
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var loadColorScheme: ColorScheme?
+    private static let surface = LogSurface.embeddedCheckout
 
     /// Creates a checkout for an order.
     ///
@@ -156,26 +159,48 @@ public struct CrossmintEmbeddedCheckout: View {
     }
 
     public var body: some View {
-        switch checkoutUrlResult {
-        case .success(let url):
-            HostedWebView(
-                url: url,
-                navigationPolicy: .crossmintMainFrame(resolvedHost: URL(string: url)?.host ?? ""),
-                onMessage: handle
-            )
-        case .failure(let error):
-            CheckoutErrorView(error: error)
+        Group {
+            switch checkoutUrlResult {
+            case .success(let url):
+                HostedWebView(
+                    url: url,
+                    navigationPolicy: .crossmintMainFrame(resolvedHost: URL(string: url)?.host ?? ""),
+                    logAttributes: logAttributes,
+                    onMessage: handle
+                )
+            case .failure(let error):
+                CheckoutErrorView(error: error, surface: Self.surface)
+            }
+        }
+        .onAppear {
+            if loadColorScheme == nil {
+                loadColorScheme = colorScheme
+            }
         }
     }
 
+    private var logAttributes: [String: String] {
+        [
+            "surface": Self.surface.rawValue,
+            "hasOrderId": String(orderId != nil),
+            "hasClientSecret": String(clientSecret != nil),
+            "hasPayment": String(payment != nil),
+            "hasAppearance": String(appearance != nil),
+            "hasController": String(controller != nil),
+            "identityVerificationHandling": identityVerificationHandling?.rawValue ?? "default"
+        ]
+    }
+
     @MainActor
-    private func handle(_ messageBody: Any, _ responder: BridgeResponder) {
+    func handle(_ messageBody: Any, _ responder: BridgeResponder) {
         guard let event = CheckoutEvent(messageBody: messageBody) else { return }
         switch event {
         case .orderUpdated(let update):
+            logOrderUpdate(update)
             controller?.handle(update)
             onOrderUpdatedHandler?(update)
         case .orderCreationFailed(let message):
+            Logger.checkout.error(LogEvents.orderCreationError, attributes: ["message": message])
             onOrderCreationFailedHandler?(message)
         case .cryptoRequest(let request):
             guard let reply = request.noPayerReply else { return }
@@ -183,11 +208,27 @@ public struct CrossmintEmbeddedCheckout: View {
         }
     }
 
-    private var checkoutUrlResult: Result<String, Error> {
-        Result { try generateCheckoutUrl() }
+    private func logOrderUpdate(_ update: CheckoutOrderUpdate) {
+        guard let order = update.order else {
+            Logger.checkout.warning(LogEvents.orderUpdatedEmpty, attributes: [
+                "hasClientSecret": String(update.orderClientSecret != nil)
+            ])
+            return
+        }
+        Logger.checkout.info(LogEvents.orderUpdated, attributes: [
+            "orderId": order.orderId ?? "",
+            "phase": order.phase?.rawValue ?? "",
+            "paymentStatus": order.payment?.status ?? "",
+            "requiresKyc": String(order.identityVerificationCredentials != nil),
+            "hasClientSecret": String(update.orderClientSecret != nil)
+        ])
     }
 
-    func generateCheckoutUrl() throws -> String {
+    private var checkoutUrlResult: Result<String, Error> {
+        Result { try generateCheckoutUrl(colorScheme: loadColorScheme ?? colorScheme) }
+    }
+
+    func generateCheckoutUrl(colorScheme: ColorScheme = .light) throws -> String {
         let environment = try resolvedEnvironment()
 
         if lineItems != nil {
@@ -215,7 +256,7 @@ public struct CrossmintEmbeddedCheckout: View {
             queryItems.append(URLQueryItem(name: "payment", value: try payment.toJSON()))
         }
         if let appearance {
-            queryItems.append(URLQueryItem(name: "appearance", value: try appearance.toJSON()))
+            queryItems.append(URLQueryItem(name: "appearance", value: try appearance.toJSON(userInfo: [.checkoutColorScheme: colorScheme])))
         }
         if let identityVerificationHandling {
             queryItems.append(URLQueryItem(

@@ -96,23 +96,34 @@ CrossmintEmbeddedCheckout(
     orderId: orderId,
     clientSecret: clientSecret,
     appearance: CheckoutAppearance(
+        fonts: [.googleFonts("Inter", weights: [.regular, .semibold])],
         variables: CheckoutAppearanceVariables(
+            fontFamily: "Inter, sans-serif",
+            spacingUnit: 4,
+            borderRadius: 8,
             colors: CheckoutVariablesColorStyle(
-                textPrimary: "#000000",
-                textSecondary: "#606060",
-                backgroundPrimary: "#FFFFFF",
-                borderPrimary: "#E0E0E0"
+                textPrimary: .color(.primary),
+                textSecondary: .color(.secondary),
+                backgroundPrimary: .uiColor(.systemBackground),
+                borderPrimary: .hex("#E0E0E0")
             )
         ),
         rules: CheckoutAppearanceRules(
             primaryButton: CheckoutPrimaryButtonRule(
-                borderRadius: "8px",
-                colors: CheckoutColorStyle(background: "#6C5CE7", text: "#FFFFFF")
+                borderRadius: 12,
+                font: CheckoutFontStyle(size: .px(17), weight: .semibold),
+                colors: CheckoutColorStyle(text: .color(.white), background: .hex("#6C5CE7"))
             )
         )
     )
 )
 ```
+
+Load fonts with `.googleFonts(_:weights:)`, or with `.cssURL(_:)` for other Google Fonts links. The checkout ignores stylesheets from other domains.
+
+Set colors with a SwiftUI `Color`, a `UIColor`, a hex string, or a CSS color string. If a color changes between light and dark mode, the checkout uses the value for its mode when it loads.
+
+Set lengths such as `borderRadius` and `spacingUnit` with a number of points, or with `.rem(_:)`, `.em(_:)`, or `.custom(_:)`.
 
 > **Note:** `lineItems` and `recipient` are accepted as parameters but not yet implemented. Passing either will display an error.
 

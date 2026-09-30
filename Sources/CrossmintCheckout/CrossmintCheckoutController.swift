@@ -37,16 +37,37 @@ public final class CrossmintCheckoutController: ObservableObject {
 
     /// Removes the stored order state.
     public func clear() {
+        Logger.checkout.debug(LogEvents.controllerCleared, attributes: ["orderId": order?.orderId ?? ""])
         order = nil
         orderClientSecret = nil
     }
 
     func handle(_ update: CheckoutOrderUpdate) {
         if let updatedOrder = update.order {
+            logTransitions(from: order, to: updatedOrder)
             order = updatedOrder
         }
         if let secret = update.orderClientSecret {
             orderClientSecret = secret
+        }
+    }
+
+    private func logTransitions(from previous: CheckoutOrder?, to next: CheckoutOrder) {
+        let orderId = next.orderId ?? previous?.orderId ?? ""
+        if let phase = next.phase, phase != previous?.phase {
+            Logger.checkout.info(LogEvents.orderPhaseChanged, attributes: [
+                "orderId": orderId,
+                "from": previous?.phase?.rawValue ?? "",
+                "to": phase.rawValue
+            ])
+        }
+        if let credentials = next.identityVerificationCredentials,
+           credentials != previous?.identityVerificationCredentials {
+            Logger.checkout.info(LogEvents.orderKycRequired, attributes: [
+                "orderId": orderId,
+                "inquiryId": credentials.inquiryId,
+                "hasSessionToken": String(credentials.sessionToken != nil)
+            ])
         }
     }
 }
