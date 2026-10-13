@@ -11,6 +11,7 @@ import CrossmintCheckout
 struct ContentView: View {
     @StateObject private var controller = CrossmintCheckoutController()
     @State private var kycCredentials: IdentityVerificationCredentials?
+    @State private var kycClosed = false
 
     var body: some View {
         CrossmintEmbeddedCheckout(
@@ -38,11 +39,11 @@ struct ContentView: View {
             controller: controller
         )
         .onChange(of: controller.identityVerificationCredentials) { _, credentials in
-            if let credentials {
+            if let credentials, !kycClosed {
                 kycCredentials = credentials
             }
         }
-        .sheet(item: $kycCredentials) { credentials in
+        .sheet(item: $kycCredentials, onDismiss: { kycClosed = true }) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
                 credentials: credentials

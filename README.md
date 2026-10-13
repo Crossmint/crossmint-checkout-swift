@@ -157,12 +157,13 @@ Reusing a controller across checkout sessions requires calling `clear()` first.
 
 Some orders require identity verification before payment. By default checkout renders that step inline and you do nothing.
 
-To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: present it when the order has new credentials, and close it in `onComplete` or `onCancel`. Do not close it when the credentials go away: the order can leave `requires-kyc` as soon as the buyer submits, before the flow shows its result.
+To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: present it when the order first has credentials, keep passing the latest ones while it is open, close it in `onComplete` or `onCancel`, and do not reopen it for that order, even after a swipe dismiss. Do not close it when the credentials go away: the order can leave `requires-kyc` as soon as the buyer submits, before the flow shows its result.
 
 ```swift
 struct CheckoutView: View {
     @StateObject private var controller = CrossmintCheckoutController()
     @State private var kycCredentials: IdentityVerificationCredentials?
+    @State private var kycClosed = false
 
     var body: some View {
         CrossmintEmbeddedCheckout(
@@ -173,11 +174,11 @@ struct CheckoutView: View {
             controller: controller
         )
         .onChange(of: controller.identityVerificationCredentials) { credentials in
-            if let credentials {
+            if let credentials, !kycClosed {
                 kycCredentials = credentials
             }
         }
-        .sheet(item: $kycCredentials) { credentials in
+        .sheet(item: $kycCredentials, onDismiss: { kycClosed = true }) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
                 credentials: credentials
