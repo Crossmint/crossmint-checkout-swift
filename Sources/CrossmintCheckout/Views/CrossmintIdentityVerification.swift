@@ -13,6 +13,9 @@ import SwiftUI
 /// The Crossmint environment comes from the API key. Attach event handlers with
 /// ``onReady(_:)``, ``onComplete(_:)``, ``onCancel(_:)``, and ``onError(_:)``.
 ///
+/// Keep the view on screen until ``onComplete(_:)`` or ``onCancel(_:)``. The order can drop its
+/// credentials before the verification shows its result.
+///
 /// Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist.
 public struct CrossmintIdentityVerification: View {
     private let apiKey: String

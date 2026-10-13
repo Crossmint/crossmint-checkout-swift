@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 import CrossmintCheckout
 
 struct ContentView: View {
@@ -37,15 +38,21 @@ struct ContentView: View {
             identityVerificationHandling: .external,
             controller: controller
         )
-        .onReceive(controller.$order) { order in
-            kycCredentials = order?.identityVerificationCredentials
+        .onReceive(controller.$order.map { $0?.identityVerificationCredentials }.removeDuplicates()) { credentials in
+            if let credentials {
+                kycCredentials = credentials
+            }
         }
         .sheet(item: $kycCredentials) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
                 credentials: credentials
             )
-            .onComplete { status in print("Identity verification finished: \(status)") }
+            .onComplete { status in
+                print("Identity verification finished: \(status)")
+                kycCredentials = nil
+            }
+            .onCancel { kycCredentials = nil }
             .onError { error in print("Identity verification error: \(error.message)") }
         }
     }

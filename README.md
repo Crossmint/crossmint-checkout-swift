@@ -157,9 +157,13 @@ Reusing a controller across checkout sessions requires calling `clear()` first.
 
 Some orders require identity verification before payment. By default checkout renders that step inline and you do nothing.
 
-To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: the credentials appear when the order needs verification, and they go away when the backend confirms it.
+To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: present it when the order has new credentials, and close it in `onComplete` or `onCancel`. Do not close it when the credentials go away: the order can leave `requires-kyc` as soon as the buyer submits, before the flow shows its result.
 
 ```swift
+import SwiftUI
+import Combine
+import CrossmintCheckout
+
 struct CheckoutView: View {
     @StateObject private var controller = CrossmintCheckoutController()
     @State private var kycCredentials: IdentityVerificationCredentials?
@@ -172,15 +176,21 @@ struct CheckoutView: View {
             identityVerificationHandling: .external,
             controller: controller
         )
-        .onReceive(controller.$order) { order in
-            kycCredentials = order?.identityVerificationCredentials
+        .onReceive(controller.$order.map { $0?.identityVerificationCredentials }.removeDuplicates()) { credentials in
+            if let credentials {
+                kycCredentials = credentials
+            }
         }
         .sheet(item: $kycCredentials) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
                 credentials: credentials
             )
-            .onComplete { status in print("KYC finished: \(status)") }
+            .onComplete { status in
+                print("KYC finished: \(status)")
+                kycCredentials = nil
+            }
+            .onCancel { kycCredentials = nil }
             .onError { error in print("KYC error: \(error.message)") }
         }
     }
