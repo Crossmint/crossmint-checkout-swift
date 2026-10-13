@@ -160,10 +160,6 @@ Some orders require identity verification before payment. By default checkout re
 To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: present it when the order has new credentials, and close it in `onComplete` or `onCancel`. Do not close it when the credentials go away: the order can leave `requires-kyc` as soon as the buyer submits, before the flow shows its result.
 
 ```swift
-import SwiftUI
-import Combine
-import CrossmintCheckout
-
 struct CheckoutView: View {
     @StateObject private var controller = CrossmintCheckoutController()
     @State private var kycCredentials: IdentityVerificationCredentials?
@@ -176,7 +172,7 @@ struct CheckoutView: View {
             identityVerificationHandling: .external,
             controller: controller
         )
-        .onReceive(controller.$order.map { $0?.identityVerificationCredentials }.removeDuplicates()) { credentials in
+        .onChange(of: controller.identityVerificationCredentials) { credentials in
             if let credentials {
                 kycCredentials = credentials
             }

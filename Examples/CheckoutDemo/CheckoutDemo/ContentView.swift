@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 import CrossmintCheckout
 
 struct ContentView: View {
@@ -38,7 +37,7 @@ struct ContentView: View {
             identityVerificationHandling: .external,
             controller: controller
         )
-        .onReceive(controller.$order.map { $0?.identityVerificationCredentials }.removeDuplicates()) { credentials in
+        .onChange(of: controller.identityVerificationCredentials) { _, credentials in
             if let credentials {
                 kycCredentials = credentials
             }
