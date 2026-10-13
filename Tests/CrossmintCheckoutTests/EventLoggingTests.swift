@@ -150,7 +150,7 @@ final class EventLoggingTests {
         let kycRequired = spy.entries.filter { $0.message == LogEvents.orderKycRequired }
         #expect(kycRequired.count == 2)
         #expect(kycRequired.first?.attributes == [
-            "orderId": "o-1", "credentialsId": "ver-1", "credentialsShape": "session", "hasSessionToken": "false"
+            "orderId": "o-1", "credentialsId": "ver-1", "credentialsShape": "session"
         ])
         #expect(spy.entry(LogEvents.identityReady)?.attributes == ["credentialsId": "ver-1", "credentialsShape": "session"])
         let logged = spy.entries.flatMap { ($0.attributes ?? [:]).values }

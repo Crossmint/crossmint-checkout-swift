@@ -162,6 +162,8 @@ private func decodeCredentials(_ json: String) throws -> IdentityVerificationCre
 @Test func credentialsDecodeAnEmptyDeviceSessionKeyAsAbsent() throws {
     let credentials = try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":""}"#)
     #expect(credentials == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1"))
+    #expect(try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":5}"#)
+        == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1"))
 }
 
 @MainActor
@@ -169,6 +171,18 @@ private func decodeCredentials(_ json: String) throws -> IdentityVerificationCre
     let credentials = try decodeCredentials(#"{"provider":"persona","inquiryId":"inq-1","sessionToken":""}"#)
     #expect(credentials == IdentityVerificationCredentials(inquiryId: "inq-1"))
     #expect(credentials.provider == "persona")
+}
+
+@MainActor
+@Test func credentialsDecodePrefersACompleteSession() throws {
+    #expect(try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","provider":"persona","inquiryId":"inq-1"}"#)
+        == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1"))
+}
+
+@MainActor
+@Test func credentialsDecodeFallsBackToPersonaForAnIncompleteSession() throws {
+    #expect(try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"","provider":"persona","inquiryId":"inq-1"}"#)
+        == IdentityVerificationCredentials(inquiryId: "inq-1"))
 }
 
 @MainActor

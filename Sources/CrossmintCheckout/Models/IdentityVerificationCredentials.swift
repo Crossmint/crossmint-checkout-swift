@@ -57,7 +57,12 @@ public struct IdentityVerificationCredentials: Codable, Sendable, Equatable, Ide
     }
 
     var logAttributes: [String: String] {
-        ["credentialsId": id, "credentialsShape": provider ?? "session"]
+        switch shape {
+        case .persona(let inquiryId, let sessionToken):
+            ["credentialsId": inquiryId, "credentialsShape": "persona", "hasSessionToken": String(sessionToken != nil)]
+        case .session(let verificationId, _, _):
+            ["credentialsId": verificationId, "credentialsShape": "session"]
+        }
     }
 
     /// Creates the credentials for a Persona inquiry.
@@ -95,7 +100,7 @@ public struct IdentityVerificationCredentials: Codable, Sendable, Equatable, Ide
             self.init(
                 verificationId: verificationId,
                 clientSecret: clientSecret,
-                deviceSessionKey: try container.decodeIfPresent(String.self, forKey: .deviceSessionKey)
+                deviceSessionKey: try? container.decodeIfPresent(String.self, forKey: .deviceSessionKey)
             )
             return
         }

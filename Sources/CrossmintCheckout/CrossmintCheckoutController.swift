@@ -63,10 +63,7 @@ public final class CrossmintCheckoutController: ObservableObject {
         }
         if let credentials = next.identityVerificationCredentials,
            credentials != previous?.identityVerificationCredentials {
-            Logger.checkout.info(LogEvents.orderKycRequired, attributes: credentials.logAttributes.merging([
-                "orderId": orderId,
-                "hasSessionToken": String(credentials.sessionToken != nil)
-            ]) { $1 })
+            Logger.checkout.info(LogEvents.orderKycRequired, attributes: credentials.logAttributes.merging(["orderId": orderId]) { $1 })
         }
     }
 }
