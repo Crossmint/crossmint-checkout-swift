@@ -96,18 +96,17 @@ public struct CrossmintIdentityVerification: View {
     }
 
     private var logAttributes: [String: String] {
-        [
+        credentials.logAttributes.merging([
             "surface": Self.surface.rawValue,
-            "inquiryId": credentials.inquiryId,
             "hasSessionToken": String(credentials.sessionToken != nil),
             "locale": locale?.rawValue ?? "default"
-        ]
+        ]) { $1 }
     }
 
     @MainActor
     func handle(_ messageBody: Any) {
         guard let event = IdentityVerificationEvent(messageBody: messageBody) else { return }
-        let attributes = ["inquiryId": credentials.inquiryId]
+        let attributes = credentials.logAttributes
         switch event {
         case .ready:
             Logger.checkout.info(LogEvents.identityReady, attributes: attributes)
