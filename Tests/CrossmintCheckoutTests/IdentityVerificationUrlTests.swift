@@ -234,6 +234,19 @@ func credentialsDecodeRejectsIncompleteShapes(json: String) {
 }
 
 @MainActor
+@Test func credentialsDescriptionsHideTheSecrets() {
+    let session = IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-secret", deviceSessionKey: "dsk-secret")
+    let persona = IdentityVerificationCredentials(inquiryId: "inq-1", sessionToken: "tok-secret")
+
+    for text in [String(describing: session), "\(session)", String(reflecting: session)] {
+        #expect(text == "IdentityVerificationCredentials(session, id: ver-1)")
+    }
+    for text in [String(describing: persona), "\(persona)", String(reflecting: persona)] {
+        #expect(text == "IdentityVerificationCredentials(persona, id: inq-1)")
+    }
+}
+
+@MainActor
 @Test func developmentKeyCollapsesToStaging() throws {
     let verification = CrossmintIdentityVerification(
         apiKey: "ck_development_test",

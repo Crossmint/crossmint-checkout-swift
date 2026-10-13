@@ -139,3 +139,14 @@ public struct IdentityVerificationCredentials: Codable, Sendable, Equatable, Ide
         return value
     }
 }
+
+extension IdentityVerificationCredentials: CustomStringConvertible, CustomDebugStringConvertible {
+    public var description: String {
+        switch shape {
+        case .persona: "IdentityVerificationCredentials(persona, id: \(id))"
+        case .session: "IdentityVerificationCredentials(session, id: \(id))"
+        }
+    }
+
+    public var debugDescription: String { description }
+}
