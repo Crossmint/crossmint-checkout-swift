@@ -13,6 +13,10 @@ import SwiftUI
 /// The Crossmint environment comes from the API key. Attach event handlers with
 /// ``onReady(_:)``, ``onComplete(_:)``, ``onCancel(_:)``, and ``onError(_:)``.
 ///
+/// Show the view when the order first has credentials, and pass it the latest ones while it is open.
+/// Keep it on screen until ``onComplete(_:)`` or ``onCancel(_:)``, even if the order drops its
+/// credentials first. Once it closes, do not show it again for that order.
+///
 /// Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist.
 public struct CrossmintIdentityVerification: View {
     private let apiKey: String
@@ -96,18 +100,16 @@ public struct CrossmintIdentityVerification: View {
     }
 
     private var logAttributes: [String: String] {
-        [
+        credentials.logAttributes.merging([
             "surface": Self.surface.rawValue,
-            "inquiryId": credentials.inquiryId,
-            "hasSessionToken": String(credentials.sessionToken != nil),
             "locale": locale?.rawValue ?? "default"
-        ]
+        ]) { $1 }
     }
 
     @MainActor
     func handle(_ messageBody: Any) {
         guard let event = IdentityVerificationEvent(messageBody: messageBody) else { return }
-        let attributes = ["inquiryId": credentials.inquiryId]
+        let attributes = credentials.logAttributes
         switch event {
         case .ready:
             Logger.checkout.info(LogEvents.identityReady, attributes: attributes)

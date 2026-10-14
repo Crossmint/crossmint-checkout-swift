@@ -93,9 +93,9 @@ final class EventLoggingTests {
     }
 
     @Test(arguments: [
-        (#"{"event":"kyc:ready"}"#, LogEvents.identityReady, CheckoutLogLevel.info, "inquiryId", "inq-1"),
+        (#"{"event":"kyc:ready"}"#, LogEvents.identityReady, CheckoutLogLevel.info, "credentialsId", "inq-1"),
         (#"{"event":"kyc:completed","data":{"status":"verified"}}"#, LogEvents.identityCompleted, .info, "status", "verified"),
-        (#"{"event":"kyc:cancelled"}"#, LogEvents.identityCancelled, .info, "inquiryId", "inq-1"),
+        (#"{"event":"kyc:cancelled"}"#, LogEvents.identityCancelled, .info, "credentialsShape", "persona"),
         (#"{"event":"kyc:error","data":{"retriable":true,"reason":"provider-error","message":"boom"}}"#, LogEvents.identityError, .error, "reason", "provider-error")
     ])
     func identityEventsLog(raw: String, event: String, level: CheckoutLogLevel, key: String, value: String) {
@@ -135,7 +135,26 @@ final class EventLoggingTests {
         #expect(spy.entries.filter { $0.message == LogEvents.orderPhaseChanged }.count == 1)
         #expect(spy.entries.filter { $0.message == LogEvents.orderKycRequired }.count == 1)
         #expect(spy.entry(LogEvents.orderPhaseChanged)?.attributes == ["orderId": "o-1", "from": "", "to": "payment"])
-        #expect(spy.entry(LogEvents.orderKycRequired)?.attributes == ["orderId": "o-1", "inquiryId": "inq-1", "hasSessionToken": "true"])
+        #expect(spy.entry(LogEvents.orderKycRequired)?.attributes == [
+            "orderId": "o-1", "credentialsId": "inq-1", "credentialsShape": "persona", "hasSessionToken": "true"
+        ])
+    }
+
+    @Test func sessionCredentialsLogTheIdAndShapeButNoSecrets() throws {
+        let controller = CrossmintCheckoutController()
+        controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o-1","payment":{"preparation":{"kyc":{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":"dsk-1"}}}}}}"#))
+        controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o-1","payment":{"preparation":{"kyc":{"verificationId":"ver-1","clientSecret":"cs-2"}}}}}}"#))
+        let credentials = try #require(controller.identityVerificationCredentials)
+        CrossmintIdentityVerification(apiKey: "ck_staging_test", credentials: credentials).handle(#"{"event":"kyc:ready"}"#)
+
+        let kycRequired = spy.entries.filter { $0.message == LogEvents.orderKycRequired }
+        #expect(kycRequired.count == 2)
+        #expect(kycRequired.first?.attributes == [
+            "orderId": "o-1", "credentialsId": "ver-1", "credentialsShape": "session"
+        ])
+        #expect(spy.entry(LogEvents.identityReady)?.attributes == ["credentialsId": "ver-1", "credentialsShape": "session"])
+        let logged = spy.entries.flatMap { ($0.attributes ?? [:]).values }
+        #expect(!logged.contains { $0.contains("cs-1") || $0.contains("cs-2") || $0.contains("dsk-1") })
     }
 
     @Test func replyWithoutWebViewLogsAWarning() {

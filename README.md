@@ -157,12 +157,13 @@ Reusing a controller across checkout sessions requires calling `clear()` first.
 
 Some orders require identity verification before payment. By default checkout renders that step inline and you do nothing.
 
-To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: the credentials appear when the order needs verification, and they go away when the backend confirms it.
+To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: present it when the order first has credentials, keep passing the latest ones while it is open, close it in `onComplete` or `onCancel`, and do not reopen it for that order, even after a swipe dismiss. Do not close it when the credentials go away: the order can leave `requires-kyc` as soon as the buyer submits, before the flow shows its result. Track the closed order by its `orderId`, not the credentials `id`, which can repeat across orders.
 
 ```swift
 struct CheckoutView: View {
     @StateObject private var controller = CrossmintCheckoutController()
     @State private var kycCredentials: IdentityVerificationCredentials?
+    @State private var kycClosedOrderId: String?
 
     var body: some View {
         CrossmintEmbeddedCheckout(
@@ -172,15 +173,21 @@ struct CheckoutView: View {
             identityVerificationHandling: .external,
             controller: controller
         )
-        .onReceive(controller.$order) { order in
-            kycCredentials = order?.identityVerificationCredentials
+        .onChange(of: controller.identityVerificationCredentials) { credentials in
+            if let credentials, controller.order?.orderId != kycClosedOrderId {
+                kycCredentials = credentials
+            }
         }
-        .sheet(item: $kycCredentials) { credentials in
+        .sheet(item: $kycCredentials, onDismiss: { kycClosedOrderId = controller.order?.orderId }) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
                 credentials: credentials
             )
-            .onComplete { status in print("KYC finished: \(status)") }
+            .onComplete { status in
+                print("KYC finished: \(status)")
+                kycCredentials = nil
+            }
+            .onCancel { kycCredentials = nil }
             .onError { error in print("KYC error: \(error.message)") }
         }
     }
