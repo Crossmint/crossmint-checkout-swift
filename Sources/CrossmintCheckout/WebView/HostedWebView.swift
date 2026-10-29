@@ -82,6 +82,13 @@ struct HostedWebView: UIViewRepresentable {
         }
     }
 
+    func mediaCaptureDecision(for type: WKMediaCaptureType, originProtocol: String, originHost: String) -> WKPermissionDecision {
+        guard allowsMediaCapture, type == .camera,
+              navigationPolicy.allowsCamera(originProtocol: originProtocol, originHost: originHost)
+        else { return .prompt }
+        return .grant
+    }
+
     func makeCoordinator() -> Coordinator {
         Coordinator(host: self)
     }
@@ -220,11 +227,23 @@ struct HostedWebView: UIViewRepresentable {
             type: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void
         ) {
-            let decision: WKPermissionDecision = host.allowsMediaCapture && type == .camera ? .grant : .prompt
-            Logger.checkout.debug(LogEvents.webviewMediaPermission, attributes: attributes([
+            let requester = frame.securityOrigin
+            let decision = host.mediaCaptureDecision(
+                for: type,
+                originProtocol: requester.protocol,
+                originHost: requester.host
+            )
+            let attributes = attributes([
                 "type": Self.name(of: type),
-                "decision": decision == .grant ? "grant" : "prompt"
-            ]))
+                "decision": decision == .grant ? "grant" : "prompt",
+                "originHost": requester.host,
+                "mainFrame": String(frame.isMainFrame)
+            ])
+            if host.allowsMediaCapture, type == .camera, decision != .grant {
+                Logger.checkout.warning(LogEvents.webviewMediaPermissionUntrustedOrigin, attributes: attributes)
+            } else {
+                Logger.checkout.debug(LogEvents.webviewMediaPermission, attributes: attributes)
+            }
             decisionHandler(decision)
         }
 
