@@ -22,6 +22,7 @@ enum LogEvents {
     static let webviewNavigationBlocked = "checkout.webview.navigation.blocked"
     static let webviewProcessTerminated = "checkout.webview.webProcess.terminated"
     static let webviewMediaPermission = "checkout.webview.mediaPermission"
+    static let webviewMediaPermissionUntrustedOrigin = "checkout.webview.mediaPermission.untrustedOrigin"
     static let webviewDismantled = "checkout.webview.dismantled"
 
     static let bridgeInbound = "checkout.bridge.inbound"
