@@ -107,6 +107,26 @@ final class EventLoggingTests {
         #expect(entry?.attributes?[key] == value)
     }
 
+    @Test(arguments: [
+        (#"{"event":"offramp:ready"}"#, LogEvents.offrampReady, CheckoutLogLevel.info, "sessionId", "ses-1"),
+        (#"{"event":"offramp:status","data":{"status":"reviewing","orderId":"o-1"}}"#, LogEvents.offrampStatusChanged, .info, "status", "reviewing"),
+        (#"{"event":"offramp:completed","data":{"orderId":"o-1","txId":"0xhash"}}"#, LogEvents.offrampCompleted, .info, "orderId", "o-1"),
+        (#"{"event":"offramp:cancelled"}"#, LogEvents.offrampCancelled, .info, "sessionId", "ses-1"),
+        (#"{"event":"offramp:error","data":{"retriable":true,"reason":"provider-error","message":"boom"}}"#, LogEvents.offrampError, .error, "reason", "provider-error")
+    ])
+    func offrampEventsLogTheSessionButNotItsSecret(raw: String, event: String, level: CheckoutLogLevel, key: String, value: String) {
+        CrossmintEmbeddedOfframp(
+            apiKey: "ck_staging_test",
+            credentials: EmbeddedOfframpCredentials(sessionId: "ses-1", clientSecret: "cs-offramp-secret"),
+            payer: EmbeddedOfframpPayer(signAndSendTransaction: { _ in "" })
+        ).handle(raw, BridgeResponder())
+
+        let entry = spy.entry(event)
+        #expect(entry?.level == level)
+        #expect(entry?.attributes?[key] == value)
+        #expect(!spy.entries.flatMap { ($0.attributes ?? [:]).values }.contains { $0.contains("cs-offramp-secret") })
+    }
+
     @Test func loadStartLogsHostAndPathWithoutQuery() {
         makeCoordinator().load("https://staging.crossmint.com/sdk/unstable/identity-verification?apiKey=ck_staging_secret", in: WKWebView())
 
