@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Keep ``CrossmintEmbeddedOfframp`` on screen while the payer runs. Once the view is gone, the page never gets the
 /// reply.
-public struct EmbeddedOfframpPayer {
+public struct EmbeddedOfframpPayer: Sendable {
     let signAndSendTransaction: @MainActor (OfframpTransaction) async throws -> String
     let signMessage: (@MainActor (OfframpMessage) async throws -> String)?
 
