@@ -11,10 +11,13 @@ import Foundation
 ///
 /// Create the session on your server with Create Offramp Session, then pass the `sessionId` and
 /// `clientSecret` of the response. You can also decode the credentials from that response.
-public struct EmbeddedOfframpCredentials: Codable, Sendable, Equatable {
+public struct EmbeddedOfframpCredentials: Codable, Sendable, Equatable, Identifiable {
     /// The identifier of the offramp session.
     public let sessionId: String
     let clientSecret: String
+
+    /// The stable identity of the credentials: the session identifier.
+    public var id: String { sessionId }
 
     /// Creates the credentials of an offramp session.
     public init(sessionId: String, clientSecret: String) {
