@@ -16,7 +16,7 @@ import WebKit
     let host = HostedWebView(
         url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
         navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
-        onLoadFailure: { messages.append($0) }
+        onLoadFailure: { message, _ in messages.append(message) }
     )
     let coordinator = HostedWebView.Coordinator(host: host)
     let webView = WKWebView()
@@ -32,7 +32,7 @@ import WebKit
     let host = HostedWebView(
         url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
         navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
-        onLoadFailure: { messages.append($0) }
+        onLoadFailure: { message, _ in messages.append(message) }
     )
     let coordinator = HostedWebView.Coordinator(host: host)
     let webView = WKWebView()

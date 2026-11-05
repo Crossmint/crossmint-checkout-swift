@@ -14,9 +14,10 @@ struct HostedWebView: UIViewRepresentable {
     var allowsMediaCapture = false
     var isScrollEnabled = false
     var injectsViewportScript = true
+    var reloadsAfterProcessTermination = false
     var logAttributes: [String: String] = [:]
     var onMessage: @MainActor (Any, BridgeResponder) -> Void = { _, _ in }
-    var onLoadFailure: ((String) -> Void)?
+    var onLoadFailure: ((String, _ statusCode: Int?) -> Void)?
 
     private static let messageHandlerName = "crossmint"
 
@@ -192,7 +193,7 @@ struct HostedWebView: UIViewRepresentable {
                 Logger.checkout.error(LogEvents.webviewHttpError, attributes: attributes(["statusCode": String(statusCode)]))
             }
             if let message = loadFailureGate.reportOnce(forHTTPStatus: statusCode) {
-                host.onLoadFailure?(message)
+                host.onLoadFailure?(message, statusCode)
                 return .cancel
             }
             return .allow
@@ -227,6 +228,8 @@ struct HostedWebView: UIViewRepresentable {
 
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
             Logger.checkout.error(LogEvents.webviewProcessTerminated, attributes: attributes(for: webView.url))
+            guard host.reloadsAfterProcessTermination, let loadedURL else { return }
+            load(loadedURL, in: webView)
         }
 
         private func reportLoadFailure(_ error: Error) {
@@ -242,7 +245,7 @@ struct HostedWebView: UIViewRepresentable {
                 Logger.checkout.error(LogEvents.webviewLoadError, attributes: attributes)
             }
             guard let message = loadFailureGate.reportOnce(for: error) else { return }
-            host.onLoadFailure?(message)
+            host.onLoadFailure?(message, nil)
         }
 
         func webView(
