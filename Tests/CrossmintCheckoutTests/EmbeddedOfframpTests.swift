@@ -317,6 +317,15 @@ func offrampReportsALoadFailureByWhetherARetryCanWork(statusCode: Int?, reason: 
     #expect(error == OfframpError(retriable: retriable, reason: reason, message: "boom"))
 }
 
+// MARK: - Web view
+
+@MainActor
+@Test func offrampGrantsTheCameraToIdentityVerificationLikeTheStandaloneView() throws {
+    let offramp = makeOfframp()
+
+    #expect(offramp.hostedWebView(for: try offramp.generatePageUrl()).allowsMediaCapture)
+}
+
 // MARK: - Credentials
 
 @MainActor

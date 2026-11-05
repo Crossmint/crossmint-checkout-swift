@@ -120,20 +120,9 @@ public struct CrossmintEmbeddedOfframp: View {
         Group {
             switch pageUrlResult {
             case .success(let url):
-                HostedWebView(
-                    url: url.absoluteString,
-                    navigationPolicy: .page(url),
-                    isScrollEnabled: true,
-                    injectsViewportScript: false,
-                    reloadsAfterProcessTermination: true,
-                    logAttributes: logAttributes,
-                    onMessage: { body, responder in handle(body, responder) },
-                    onLoadFailure: { message, statusCode in
-                        report(OfframpError(loadFailure: message, statusCode: statusCode))
-                    }
-                )
-                .frame(height: fill ? nil : height)
-                .onChange(of: url) { _ in height = Self.initialHeight }
+                hostedWebView(for: url)
+                    .frame(height: fill ? nil : height)
+                    .onChange(of: url) { _ in height = Self.initialHeight }
             case .failure(let error):
                 CheckoutErrorView(error: error, surface: Self.surface)
                     .onAppear {
@@ -150,6 +139,22 @@ public struct CrossmintEmbeddedOfframp: View {
                 loadColorScheme = colorScheme
             }
         }
+    }
+
+    func hostedWebView(for url: URL) -> HostedWebView {
+        HostedWebView(
+            url: url.absoluteString,
+            navigationPolicy: .page(url),
+            allowsMediaCapture: true,
+            isScrollEnabled: true,
+            injectsViewportScript: false,
+            reloadsAfterProcessTermination: true,
+            logAttributes: logAttributes,
+            onMessage: { body, responder in handle(body, responder) },
+            onLoadFailure: { message, statusCode in
+                report(OfframpError(loadFailure: message, statusCode: statusCode))
+            }
+        )
     }
 
     private var logAttributes: [String: String] {
