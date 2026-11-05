@@ -118,16 +118,24 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.frameInfo.isMainFrame else {
+            receive(message.body, frameURL: message.frameInfo.request.url, isMainFrame: message.frameInfo.isMainFrame)
+        }
+
+        func receive(_ body: Any, frameURL: URL?, isMainFrame: Bool) {
+            guard isMainFrame else {
                 Logger.checkout.debug(LogEvents.bridgeInboundIgnored, attributes: attributes(["reason": "subframe"]))
                 return
             }
-            guard let (event, _) = BridgeDecoding.eventName(of: message.body) else {
+            guard host.navigationPolicy.trustsMessages(from: frameURL) else {
+                Logger.checkout.warning(LogEvents.bridgeInboundIgnored, attributes: attributes(["reason": "foreign-page"]))
+                return
+            }
+            guard let (event, _) = BridgeDecoding.eventName(of: body) else {
                 Logger.checkout.warning(LogEvents.bridgeInboundIgnored, attributes: attributes(["reason": "not-an-event"]))
                 return
             }
             Logger.checkout.debug(LogEvents.bridgeInbound, attributes: attributes(["event": event]))
-            host.onMessage(message.body, responder)
+            host.onMessage(body, responder)
         }
 
         func webView(
@@ -138,16 +146,38 @@ struct HostedWebView: UIViewRepresentable {
                 Logger.checkout.warning(LogEvents.webviewNavigationBlocked, attributes: attributes(["reason": "missing-url"]))
                 return .cancel
             }
-            let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
-            guard host.navigationPolicy.allows(url: url, isMainFrame: isMainFrame) else {
+            let targetIsMainFrame = navigationAction.targetFrame?.isMainFrame
+            switch host.navigationPolicy.decision(
+                for: url,
+                targetIsMainFrame: targetIsMainFrame,
+                linkActivated: navigationAction.navigationType == .linkActivated
+            ) {
+            case .allow:
+                return .allow
+            case .openExternally(let url):
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                return .cancel
+            case .cancel:
                 Logger.checkout.warning(LogEvents.webviewNavigationBlocked, attributes: attributes([
                     "scheme": url.scheme ?? "",
                     "host": url.host ?? "",
-                    "mainFrame": String(isMainFrame)
+                    "mainFrame": String(targetIsMainFrame ?? true)
                 ]))
                 return .cancel
             }
-            return .allow
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            if let url = navigationAction.request.url,
+               case .openExternally(let url) = host.navigationPolicy.decision(for: url, targetIsMainFrame: nil, linkActivated: false) {
+                UIApplication.shared.open(url)
+            }
+            return nil
         }
 
         func webView(
