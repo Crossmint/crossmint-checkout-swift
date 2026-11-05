@@ -90,6 +90,7 @@ struct HostedWebView: UIViewRepresentable {
         uiView.configuration.userContentController.removeScriptMessageHandler(
             forName: messageHandlerName
         )
+        coordinator.responder.webView = nil
         Logger.checkout.debug(LogEvents.webviewDismantled, attributes: coordinator.host.logAttributes)
     }
 
@@ -203,6 +204,7 @@ struct HostedWebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             Logger.checkout.debug(LogEvents.webviewNavigationCommit, attributes: attributes(for: webView.url))
+            responder.forgetPendingRequests()
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

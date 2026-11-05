@@ -157,6 +157,27 @@ final class EventLoggingTests {
         #expect(!logged.contains { $0.contains("cs-1") || $0.contains("cs-2") || $0.contains("dsk-1") })
     }
 
+    @Test func answeredReplyLogsOnlyAfterThePageRunsIt() async {
+        let responder = BridgeResponder()
+        responder.runScript = { _ in }
+        await responder.answer("crypto:sign-message") { BridgeReply(event: "crypto:sign-message:success", error: nil) }?.value
+
+        #expect(spy.entry(LogEvents.bridgeOutbound)?.level == .info)
+        #expect(spy.entry(LogEvents.bridgeOutbound)?.attributes == ["event": "crypto:sign-message:success"])
+        #expect(spy.entry(LogEvents.bridgeOutboundError) == nil)
+    }
+
+    @Test func answeredReplyAfterTheViewIsGoneLogsAnError() async {
+        await BridgeResponder().answer("crypto:sign-message") {
+            BridgeReply(event: "crypto:sign-message:failed", error: "locked", rejected: false)
+        }?.value
+
+        let entry = spy.entry(LogEvents.bridgeOutboundError)
+        #expect(entry?.level == .error)
+        #expect(entry?.attributes?["event"] == "crypto:sign-message:failed")
+        #expect(spy.entry(LogEvents.bridgeOutbound) == nil)
+    }
+
     @Test func replyWithoutWebViewLogsAWarning() {
         BridgeResponder().send(BridgeReply(event: "crypto:load.success", error: nil))
 
