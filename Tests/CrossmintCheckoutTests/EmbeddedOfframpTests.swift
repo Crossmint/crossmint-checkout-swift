@@ -326,6 +326,27 @@ func offrampReportsALoadFailureByWhetherARetryCanWork(statusCode: Int?, reason: 
     #expect(offramp.hostedWebView(for: try offramp.generatePageUrl()).allowsMediaCapture)
 }
 
+@MainActor
+@Test func offrampReloadsOnceAfterTheWebProcessEndsUntilThePageLoadsThenReportsARetriableError() throws {
+    var errors: [OfframpError] = []
+    var reloads: [String] = []
+    let offramp = makeOfframp().onError { errors.append($0) }
+    let url = try offramp.generatePageUrl()
+    let coordinator = HostedWebView.Coordinator(host: offramp.hostedWebView(for: url))
+
+    coordinator.processDidTerminate { reloads.append($0) }
+    coordinator.didFinishLoading(url)
+    coordinator.processDidTerminate { reloads.append($0) }
+
+    #expect(reloads == [url.absoluteString, url.absoluteString])
+    #expect(errors.isEmpty)
+
+    coordinator.processDidTerminate { reloads.append($0) }
+
+    #expect(reloads.count == 2)
+    #expect(errors == [OfframpError(retriable: true, reason: .providerError, message: "The web content process ended again before the page loaded")])
+}
+
 // MARK: - Credentials
 
 @MainActor

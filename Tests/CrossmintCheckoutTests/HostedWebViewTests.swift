@@ -39,3 +39,20 @@ import WebKit
     coordinator.webView(webView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
     #expect(messages.isEmpty)
 }
+
+@MainActor
+@Test func processTerminationNeitherReloadsNorReportsUnlessTheViewReloads() {
+    var reloads = 0
+    var messages: [String] = []
+    let coordinator = HostedWebView.Coordinator(host: HostedWebView(
+        url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
+        navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
+        onLoadFailure: { message, _ in messages.append(message) }
+    ))
+
+    coordinator.processDidTerminate { _ in reloads += 1 }
+    coordinator.processDidTerminate { _ in reloads += 1 }
+
+    #expect(reloads == 0)
+    #expect(messages.isEmpty)
+}

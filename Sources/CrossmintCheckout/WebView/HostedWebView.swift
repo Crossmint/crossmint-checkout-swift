@@ -102,6 +102,7 @@ struct HostedWebView: UIViewRepresentable {
         private(set) var loadedURL: String?
         private var loadFailureGate = LoadFailureGate()
         private var loadStartedAt: Date?
+        private var reloadedAfterTermination = false
 
         init(host: HostedWebView) {
             self.host = host
@@ -209,7 +210,12 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            var attributes = self.attributes(for: webView.url)
+            didFinishLoading(webView.url)
+        }
+
+        func didFinishLoading(_ url: URL?) {
+            reloadedAfterTermination = false
+            var attributes = self.attributes(for: url)
             if let loadStartedAt {
                 let milliseconds = Int(Date().timeIntervalSince(loadStartedAt) * 1000)
                 attributes["durationMs"] = String(milliseconds)
@@ -228,8 +234,19 @@ struct HostedWebView: UIViewRepresentable {
 
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
             Logger.checkout.error(LogEvents.webviewProcessTerminated, attributes: attributes(for: webView.url))
-            guard host.reloadsAfterProcessTermination, let loadedURL else { return }
-            load(loadedURL, in: webView)
+            processDidTerminate { load($0, in: webView) }
+        }
+
+        func processDidTerminate(reload: (String) -> Void) {
+            guard host.reloadsAfterProcessTermination else { return }
+            guard !reloadedAfterTermination else {
+                if let message = loadFailureGate.reportOnce(message: "The web content process ended again before the page loaded") {
+                    host.onLoadFailure?(message, nil)
+                }
+                return
+            }
+            reloadedAfterTermination = true
+            reload(host.url)
         }
 
         private func reportLoadFailure(_ error: Error) {
