@@ -21,7 +21,7 @@ struct LoadFailureGate {
         return reportOnce(message: "HTTP \(statusCode)")
     }
 
-    private mutating func reportOnce(message: String) -> String? {
+    mutating func reportOnce(message: String) -> String? {
         guard !hasFired else { return nil }
         hasFired = true
         return message

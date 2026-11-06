@@ -14,9 +14,10 @@ struct HostedWebView: UIViewRepresentable {
     var allowsMediaCapture = false
     var isScrollEnabled = false
     var injectsViewportScript = true
+    var reloadsAfterProcessTermination = false
     var logAttributes: [String: String] = [:]
     var onMessage: @MainActor (Any, BridgeResponder) -> Void = { _, _ in }
-    var onLoadFailure: ((String) -> Void)?
+    var onLoadFailure: ((String, _ statusCode: Int?) -> Void)?
 
     private static let messageHandlerName = "crossmint"
 
@@ -90,6 +91,7 @@ struct HostedWebView: UIViewRepresentable {
         uiView.configuration.userContentController.removeScriptMessageHandler(
             forName: messageHandlerName
         )
+        coordinator.responder.webView = nil
         Logger.checkout.debug(LogEvents.webviewDismantled, attributes: coordinator.host.logAttributes)
     }
 
@@ -100,6 +102,7 @@ struct HostedWebView: UIViewRepresentable {
         private(set) var loadedURL: String?
         private var loadFailureGate = LoadFailureGate()
         private var loadStartedAt: Date?
+        private var reloadedAfterTermination = false
 
         init(host: HostedWebView) {
             self.host = host
@@ -118,16 +121,24 @@ struct HostedWebView: UIViewRepresentable {
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.frameInfo.isMainFrame else {
+            receive(message.body, frameURL: message.frameInfo.request.url, isMainFrame: message.frameInfo.isMainFrame)
+        }
+
+        func receive(_ body: Any, frameURL: URL?, isMainFrame: Bool) {
+            guard isMainFrame else {
                 Logger.checkout.debug(LogEvents.bridgeInboundIgnored, attributes: attributes(["reason": "subframe"]))
                 return
             }
-            guard let (event, _) = BridgeDecoding.eventName(of: message.body) else {
+            guard host.navigationPolicy.trustsMessages(from: frameURL) else {
+                Logger.checkout.warning(LogEvents.bridgeInboundIgnored, attributes: attributes(["reason": "foreign-page"]))
+                return
+            }
+            guard let (event, _) = BridgeDecoding.eventName(of: body) else {
                 Logger.checkout.warning(LogEvents.bridgeInboundIgnored, attributes: attributes(["reason": "not-an-event"]))
                 return
             }
             Logger.checkout.debug(LogEvents.bridgeInbound, attributes: attributes(["event": event]))
-            host.onMessage(message.body, responder)
+            host.onMessage(body, responder)
         }
 
         func webView(
@@ -138,16 +149,38 @@ struct HostedWebView: UIViewRepresentable {
                 Logger.checkout.warning(LogEvents.webviewNavigationBlocked, attributes: attributes(["reason": "missing-url"]))
                 return .cancel
             }
-            let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
-            guard host.navigationPolicy.allows(url: url, isMainFrame: isMainFrame) else {
+            let targetIsMainFrame = navigationAction.targetFrame?.isMainFrame
+            switch host.navigationPolicy.decision(
+                for: url,
+                targetIsMainFrame: targetIsMainFrame,
+                linkActivated: navigationAction.navigationType == .linkActivated
+            ) {
+            case .allow:
+                return .allow
+            case .openExternally(let url):
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                return .cancel
+            case .cancel:
                 Logger.checkout.warning(LogEvents.webviewNavigationBlocked, attributes: attributes([
                     "scheme": url.scheme ?? "",
                     "host": url.host ?? "",
-                    "mainFrame": String(isMainFrame)
+                    "mainFrame": String(targetIsMainFrame ?? true)
                 ]))
                 return .cancel
             }
-            return .allow
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            if let url = navigationAction.request.url,
+               case .openExternally(let url) = host.navigationPolicy.decision(for: url, targetIsMainFrame: nil, linkActivated: false) {
+                UIApplication.shared.open(url)
+            }
+            return nil
         }
 
         func webView(
@@ -161,7 +194,7 @@ struct HostedWebView: UIViewRepresentable {
                 Logger.checkout.error(LogEvents.webviewHttpError, attributes: attributes(["statusCode": String(statusCode)]))
             }
             if let message = loadFailureGate.reportOnce(forHTTPStatus: statusCode) {
-                host.onLoadFailure?(message)
+                host.onLoadFailure?(message, statusCode)
                 return .cancel
             }
             return .allow
@@ -173,10 +206,16 @@ struct HostedWebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             Logger.checkout.debug(LogEvents.webviewNavigationCommit, attributes: attributes(for: webView.url))
+            responder.forgetPendingRequests()
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            var attributes = self.attributes(for: webView.url)
+            didFinishLoading(webView.url)
+        }
+
+        func didFinishLoading(_ url: URL?) {
+            reloadedAfterTermination = false
+            var attributes = self.attributes(for: url)
             if let loadStartedAt {
                 let milliseconds = Int(Date().timeIntervalSince(loadStartedAt) * 1000)
                 attributes["durationMs"] = String(milliseconds)
@@ -195,6 +234,19 @@ struct HostedWebView: UIViewRepresentable {
 
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
             Logger.checkout.error(LogEvents.webviewProcessTerminated, attributes: attributes(for: webView.url))
+            processDidTerminate { load($0, in: webView) }
+        }
+
+        func processDidTerminate(reload: (String) -> Void) {
+            guard host.reloadsAfterProcessTermination else { return }
+            guard !reloadedAfterTermination else {
+                if let message = loadFailureGate.reportOnce(message: "The web content process ended again before the page loaded") {
+                    host.onLoadFailure?(message, nil)
+                }
+                return
+            }
+            reloadedAfterTermination = true
+            reload(host.url)
         }
 
         private func reportLoadFailure(_ error: Error) {
@@ -210,7 +262,7 @@ struct HostedWebView: UIViewRepresentable {
                 Logger.checkout.error(LogEvents.webviewLoadError, attributes: attributes)
             }
             guard let message = loadFailureGate.reportOnce(for: error) else { return }
-            host.onLoadFailure?(message)
+            host.onLoadFailure?(message, nil)
         }
 
         func webView(
