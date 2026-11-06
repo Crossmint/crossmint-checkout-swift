@@ -46,6 +46,7 @@ public struct CrossmintEmbeddedOfframp: View {
     private var onErrorHandler: ((OfframpError) -> Void)?
     @Environment(\.colorScheme) private var colorScheme
     @State private var loadColorScheme: ColorScheme?
+    @State private var reportedConfigurationError: String?
     // Until the page reports its own height. WebKit may throttle a page that has no height.
     private static let initialHeight: CGFloat = 500
     @State private var height = Self.initialHeight
@@ -125,7 +126,9 @@ public struct CrossmintEmbeddedOfframp: View {
                     .onChange(of: url) { _ in height = Self.initialHeight }
             case .failure(let error):
                 CheckoutErrorView(error: error, surface: Self.surface)
-                    .onAppear {
+                    .task(id: error.localizedDescription) {
+                        guard reportedConfigurationError != error.localizedDescription else { return }
+                        reportedConfigurationError = error.localizedDescription
                         onErrorHandler?(OfframpError(
                             retriable: false,
                             reason: .invalidConfiguration,
