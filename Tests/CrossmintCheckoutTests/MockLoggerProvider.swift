@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Testing
 @testable import CrossmintCheckout
 
 final class MockLoggerProvider: LoggerProvider, @unchecked Sendable {
@@ -17,6 +18,8 @@ final class MockLoggerProvider: LoggerProvider, @unchecked Sendable {
 
     private let lock = NSLock()
     private var stored: [Entry] = []
+    // Logger.checkout is global, so tests running in parallel log into this spy too.
+    private let owner = Test.current?.id
 
     var entries: [Entry] { lock.withLock { stored } }
 
@@ -25,6 +28,7 @@ final class MockLoggerProvider: LoggerProvider, @unchecked Sendable {
     var lastAttributes: [String: String]? { entries.last?.attributes }
 
     func log(_ level: CheckoutLogLevel, _ message: String, attributes: [String: String]?) {
+        guard Test.current?.id == owner else { return }
         lock.withLock { stored.append(Entry(level: level, message: message, attributes: attributes)) }
     }
 
