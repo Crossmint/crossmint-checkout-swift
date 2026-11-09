@@ -56,3 +56,52 @@ import WebKit
     #expect(reloads == 0)
     #expect(messages.isEmpty)
 }
+
+@MainActor
+private let IDENTITY_HOST = HostedWebView(
+    url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
+    navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
+    allowsMediaCapture: true
+)
+
+@MainActor
+@Test(arguments: ["staging.crossmint.com", "crossmint.com", "withpersona.com", "inquiry.withpersona.com", "INQUIRY.WithPersona.com"])
+func cameraGrantedToCrossmintAndPersona(host: String) {
+    #expect(IDENTITY_HOST.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: host) == .grant)
+}
+
+@MainActor
+@Test(arguments: ["evil.example.com", "notwithpersona.com", "withpersona.com.evil.example.com", "www.crossmint.com", ""])
+func cameraPromptedForOtherHosts(host: String) {
+    #expect(IDENTITY_HOST.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: host) == .prompt)
+}
+
+@MainActor
+@Test func cameraPromptedForInsecureOrigin() {
+    #expect(IDENTITY_HOST.mediaCaptureDecision(for: .camera, originProtocol: "http", originHost: "inquiry.withpersona.com") == .prompt)
+}
+
+@MainActor
+@Test func microphonePromptedForTrustedHost() {
+    #expect(IDENTITY_HOST.mediaCaptureDecision(for: .microphone, originProtocol: "https", originHost: "inquiry.withpersona.com") == .prompt)
+    #expect(IDENTITY_HOST.mediaCaptureDecision(for: .cameraAndMicrophone, originProtocol: "https", originHost: "inquiry.withpersona.com") == .prompt)
+}
+
+@MainActor
+@Test func cameraPromptedWhenMediaCaptureIsOff() {
+    let checkout = HostedWebView(
+        url: "https://www.crossmint.com/sdk/2024-03-05/embedded-checkout",
+        navigationPolicy: .crossmintMainFrame(resolvedHost: "www.crossmint.com")
+    )
+    #expect(checkout.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "www.crossmint.com") == .prompt)
+}
+
+@MainActor
+@Test func offrampCameraGrantedOnlyToItsPageAndPersona() {
+    let page = "https://staging.crossmint.com/sdk/unstable/embedded-offramp"
+    let offramp = HostedWebView(url: page, navigationPolicy: .page(URL(string: page)!), allowsMediaCapture: true)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "staging.crossmint.com") == .grant)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "inquiry.withpersona.com") == .grant)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "crossmint.com") == .prompt)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "evil.example.com") == .prompt)
+}

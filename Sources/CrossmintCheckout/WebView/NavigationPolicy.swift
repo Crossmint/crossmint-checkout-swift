@@ -63,4 +63,16 @@ enum NavigationPolicy {
         url.scheme?.lowercased() == "https" && url.host?.lowercased() == page.host?.lowercased()
             && url.port == page.port && url.user == nil && url.password == nil && url.path == page.path
     }
+
+    func allowsCamera(originProtocol: String, originHost: String) -> Bool {
+        guard originProtocol.lowercased() == "https" else { return false }
+        let host = originHost.lowercased()
+        let isPersona = host == "withpersona.com" || host.hasSuffix(".withpersona.com")
+        switch self {
+        case .crossmintMainFrame(let resolvedHost):
+            return host == resolvedHost.lowercased() || host == "crossmint.com" || isPersona
+        case .page(let page):
+            return host == page.host?.lowercased() || isPersona
+        }
+    }
 }
