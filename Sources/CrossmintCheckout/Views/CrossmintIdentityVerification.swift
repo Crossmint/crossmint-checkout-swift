@@ -86,7 +86,7 @@ public struct CrossmintIdentityVerification: View {
                 injectsViewportScript: false,
                 logAttributes: logAttributes,
                 onMessage: { body, _ in handle(body) },
-                onLoadFailure: { message in
+                onLoadFailure: { message, _ in
                     onErrorHandler?(IdentityVerificationError(
                         retriable: false,
                         reason: .widgetUnavailable,

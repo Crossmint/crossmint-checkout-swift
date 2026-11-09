@@ -16,7 +16,7 @@ import WebKit
     let host = HostedWebView(
         url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
         navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
-        onLoadFailure: { messages.append($0) }
+        onLoadFailure: { message, _ in messages.append(message) }
     )
     let coordinator = HostedWebView.Coordinator(host: host)
     let webView = WKWebView()
@@ -32,11 +32,28 @@ import WebKit
     let host = HostedWebView(
         url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
         navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
-        onLoadFailure: { messages.append($0) }
+        onLoadFailure: { message, _ in messages.append(message) }
     )
     let coordinator = HostedWebView.Coordinator(host: host)
     let webView = WKWebView()
     coordinator.webView(webView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+    #expect(messages.isEmpty)
+}
+
+@MainActor
+@Test func processTerminationNeitherReloadsNorReportsUnlessTheViewReloads() {
+    var reloads = 0
+    var messages: [String] = []
+    let coordinator = HostedWebView.Coordinator(host: HostedWebView(
+        url: "https://staging.crossmint.com/sdk/unstable/identity-verification",
+        navigationPolicy: .crossmintMainFrame(resolvedHost: "staging.crossmint.com"),
+        onLoadFailure: { message, _ in messages.append(message) }
+    ))
+
+    coordinator.processDidTerminate { _ in reloads += 1 }
+    coordinator.processDidTerminate { _ in reloads += 1 }
+
+    #expect(reloads == 0)
     #expect(messages.isEmpty)
 }
 
@@ -77,4 +94,14 @@ func cameraPromptedForOtherHosts(host: String) {
         navigationPolicy: .crossmintMainFrame(resolvedHost: "www.crossmint.com")
     )
     #expect(checkout.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "www.crossmint.com") == .prompt)
+}
+
+@MainActor
+@Test func offrampCameraGrantedOnlyToItsPageAndPersona() {
+    let page = "https://staging.crossmint.com/sdk/unstable/embedded-offramp"
+    let offramp = HostedWebView(url: page, navigationPolicy: .page(URL(string: page)!), allowsMediaCapture: true)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "staging.crossmint.com") == .grant)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "inquiry.withpersona.com") == .grant)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "crossmint.com") == .prompt)
+    #expect(offramp.mediaCaptureDecision(for: .camera, originProtocol: "https", originHost: "evil.example.com") == .prompt)
 }
