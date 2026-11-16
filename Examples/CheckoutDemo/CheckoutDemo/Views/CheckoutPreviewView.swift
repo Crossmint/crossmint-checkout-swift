@@ -61,8 +61,8 @@ struct CheckoutPreviewView: View {
         .onReceive(controller.$order) { order in
             guard store.options.externalIdentityVerification,
                   let credentials = order?.identityVerificationCredentials,
-                  !handledInquiryIDs.contains(credentials.inquiryId) else { return }
-            handledInquiryIDs.insert(credentials.inquiryId)
+                  !handledInquiryIDs.contains(credentials.id) else { return }
+            handledInquiryIDs.insert(credentials.id)
             store.previewIdentityCredentials = credentials
         }
         .sheet(isPresented: $isShowingOrderDetails) {

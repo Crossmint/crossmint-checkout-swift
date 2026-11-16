@@ -11,7 +11,8 @@ import Foundation
 ///
 /// If you do not set a value, the checkout shows the step itself. If you set ``external``,
 /// the checkout does not show the step. You must then show ``CrossmintIdentityVerification``
-/// with the credentials of the order. If you do not, the buyer cannot finish.
+/// with the credentials of the order, and keep it on screen until it calls `onComplete` or `onCancel`.
+/// If you do not, the buyer cannot finish.
 public enum IdentityVerificationHandling: String, Sendable {
     /// The mode where your app shows the identity verification step with ``CrossmintIdentityVerification``.
     case external

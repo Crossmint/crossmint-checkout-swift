@@ -93,9 +93,9 @@ final class EventLoggingTests {
     }
 
     @Test(arguments: [
-        (#"{"event":"kyc:ready"}"#, LogEvents.identityReady, CheckoutLogLevel.info, "inquiryId", "inq-1"),
+        (#"{"event":"kyc:ready"}"#, LogEvents.identityReady, CheckoutLogLevel.info, "credentialsId", "inq-1"),
         (#"{"event":"kyc:completed","data":{"status":"verified"}}"#, LogEvents.identityCompleted, .info, "status", "verified"),
-        (#"{"event":"kyc:cancelled"}"#, LogEvents.identityCancelled, .info, "inquiryId", "inq-1"),
+        (#"{"event":"kyc:cancelled"}"#, LogEvents.identityCancelled, .info, "credentialsShape", "persona"),
         (#"{"event":"kyc:error","data":{"retriable":true,"reason":"provider-error","message":"boom"}}"#, LogEvents.identityError, .error, "reason", "provider-error")
     ])
     func identityEventsLog(raw: String, event: String, level: CheckoutLogLevel, key: String, value: String) {
@@ -105,6 +105,26 @@ final class EventLoggingTests {
         let entry = spy.entry(event)
         #expect(entry?.level == level)
         #expect(entry?.attributes?[key] == value)
+    }
+
+    @Test(arguments: [
+        (#"{"event":"offramp:ready"}"#, LogEvents.offrampReady, CheckoutLogLevel.info, "sessionId", "ses-1"),
+        (#"{"event":"offramp:status","data":{"status":"reviewing","orderId":"o-1"}}"#, LogEvents.offrampStatusChanged, .info, "status", "reviewing"),
+        (#"{"event":"offramp:completed","data":{"orderId":"o-1","txId":"0xhash"}}"#, LogEvents.offrampCompleted, .info, "orderId", "o-1"),
+        (#"{"event":"offramp:cancelled"}"#, LogEvents.offrampCancelled, .info, "sessionId", "ses-1"),
+        (#"{"event":"offramp:error","data":{"retriable":true,"reason":"provider-error","message":"boom"}}"#, LogEvents.offrampError, .error, "reason", "provider-error")
+    ])
+    func offrampEventsLogTheSessionButNotItsSecret(raw: String, event: String, level: CheckoutLogLevel, key: String, value: String) {
+        CrossmintEmbeddedOfframp(
+            apiKey: "ck_staging_test",
+            credentials: EmbeddedOfframpCredentials(sessionId: "ses-1", clientSecret: "cs-offramp-secret"),
+            payer: EmbeddedOfframpPayer(signAndSendTransaction: { _ in "" })
+        ).handle(raw, BridgeResponder())
+
+        let entry = spy.entry(event)
+        #expect(entry?.level == level)
+        #expect(entry?.attributes?[key] == value)
+        #expect(!spy.entries.flatMap { ($0.attributes ?? [:]).values }.contains { $0.contains("cs-offramp-secret") })
     }
 
     @Test func loadStartLogsHostAndPathWithoutQuery() {
@@ -135,7 +155,47 @@ final class EventLoggingTests {
         #expect(spy.entries.filter { $0.message == LogEvents.orderPhaseChanged }.count == 1)
         #expect(spy.entries.filter { $0.message == LogEvents.orderKycRequired }.count == 1)
         #expect(spy.entry(LogEvents.orderPhaseChanged)?.attributes == ["orderId": "o-1", "from": "", "to": "payment"])
-        #expect(spy.entry(LogEvents.orderKycRequired)?.attributes == ["orderId": "o-1", "inquiryId": "inq-1", "hasSessionToken": "true"])
+        #expect(spy.entry(LogEvents.orderKycRequired)?.attributes == [
+            "orderId": "o-1", "credentialsId": "inq-1", "credentialsShape": "persona", "hasSessionToken": "true"
+        ])
+    }
+
+    @Test func sessionCredentialsLogTheIdAndShapeButNoSecrets() throws {
+        let controller = CrossmintCheckoutController()
+        controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o-1","payment":{"preparation":{"kyc":{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":"dsk-1"}}}}}}"#))
+        controller.handle(try orderUpdate(#"{"event":"order:updated","data":{"order":{"orderId":"o-1","payment":{"preparation":{"kyc":{"verificationId":"ver-1","clientSecret":"cs-2"}}}}}}"#))
+        let credentials = try #require(controller.identityVerificationCredentials)
+        CrossmintIdentityVerification(apiKey: "ck_staging_test", credentials: credentials).handle(#"{"event":"kyc:ready"}"#)
+
+        let kycRequired = spy.entries.filter { $0.message == LogEvents.orderKycRequired }
+        #expect(kycRequired.count == 2)
+        #expect(kycRequired.first?.attributes == [
+            "orderId": "o-1", "credentialsId": "ver-1", "credentialsShape": "session"
+        ])
+        #expect(spy.entry(LogEvents.identityReady)?.attributes == ["credentialsId": "ver-1", "credentialsShape": "session"])
+        let logged = spy.entries.flatMap { ($0.attributes ?? [:]).values }
+        #expect(!logged.contains { $0.contains("cs-1") || $0.contains("cs-2") || $0.contains("dsk-1") })
+    }
+
+    @Test func answeredReplyLogsOnlyAfterThePageRunsIt() async {
+        let responder = BridgeResponder()
+        responder.runScript = { _ in }
+        await responder.answer("crypto:sign-message") { BridgeReply(event: "crypto:sign-message:success", error: nil) }?.value
+
+        #expect(spy.entry(LogEvents.bridgeOutbound)?.level == .info)
+        #expect(spy.entry(LogEvents.bridgeOutbound)?.attributes == ["event": "crypto:sign-message:success"])
+        #expect(spy.entry(LogEvents.bridgeOutboundError) == nil)
+    }
+
+    @Test func answeredReplyAfterTheViewIsGoneLogsAnError() async {
+        await BridgeResponder().answer("crypto:sign-message") {
+            BridgeReply(event: "crypto:sign-message:failed", error: "locked", rejected: false)
+        }?.value
+
+        let entry = spy.entry(LogEvents.bridgeOutboundError)
+        #expect(entry?.level == .error)
+        #expect(entry?.attributes?["event"] == "crypto:sign-message:failed")
+        #expect(spy.entry(LogEvents.bridgeOutbound) == nil)
     }
 
     @Test func replyWithoutWebViewLogsAWarning() {

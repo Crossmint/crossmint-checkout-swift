@@ -77,3 +77,90 @@ private func url(_ string: String) throws -> URL {
     #expect(gate.reportOnce(forHTTPStatus: 302) == nil)
     #expect(gate.reportOnce(forHTTPStatus: 404) == "HTTP 404")
 }
+
+private let PAGE_URL = URL(string: "https://staging.crossmint.com/sdk/unstable/embedded-offramp?apiKey=ck_staging_x")!
+private let PAGE_POLICY = NavigationPolicy.page(PAGE_URL)
+
+@MainActor
+@Test(arguments: [
+    "https://staging.crossmint.com/sdk/unstable/embedded-offramp",
+    "https://staging.crossmint.com/sdk/unstable/embedded-offramp?step=bank",
+    "https://STAGING.crossmint.com/sdk/unstable/embedded-offramp"
+])
+func pagePolicyKeepsTheMainFrameOnThePageWhateverItsQuery(page: String) throws {
+    #expect(PAGE_POLICY.decision(for: try url(page), targetIsMainFrame: true, linkActivated: false) == .allow)
+}
+
+@MainActor
+@Test(arguments: [
+    "https://evil.example/sdk/unstable/embedded-offramp",
+    "https://staging.crossmint.com/sdk/2024-03-05/embedded-checkout",
+    "http://staging.crossmint.com/sdk/unstable/embedded-offramp",
+    "https://staging.crossmint.com:8443/sdk/unstable/embedded-offramp",
+    "https://user@staging.crossmint.com/sdk/unstable/embedded-offramp"
+])
+func pagePolicyBlocksOtherMainFramePagesTheUserDidNotTap(other: String) throws {
+    #expect(PAGE_POLICY.decision(for: try url(other), targetIsMainFrame: true, linkActivated: false) == .cancel)
+}
+
+@MainActor
+@Test(arguments: [
+    ("https://terms.example/x", true),
+    ("http://terms.example/x", true),
+    ("mailto:help@terms.example", false),
+    ("javascript:alert(1)", false),
+    ("file:///etc/passwd", false)
+])
+func pagePolicyOpensWebLinksTheUserTapsInTheBrowser(link: String, opens: Bool) throws {
+    let link = try url(link)
+    #expect(PAGE_POLICY.decision(for: link, targetIsMainFrame: true, linkActivated: true) == (opens ? .openExternally(link) : .cancel))
+}
+
+@MainActor
+@Test(arguments: [("https://terms.example/x", true), ("javascript:alert(1)", false)])
+func pagePolicyOpensWebLinksForANewWindowInTheBrowser(link: String, opens: Bool) throws {
+    let link = try url(link)
+    #expect(PAGE_POLICY.decision(for: link, targetIsMainFrame: nil, linkActivated: false) == (opens ? .openExternally(link) : .cancel))
+}
+
+@MainActor
+@Test(arguments: [("https://withpersona.com/verify", true), ("javascript:alert(1)", false), ("file:///etc/passwd", false)])
+func pagePolicyAllowsFramesInsideThePageExceptUnsafeSchemes(frame: String, allowed: Bool) throws {
+    #expect(PAGE_POLICY.decision(for: try url(frame), targetIsMainFrame: false, linkActivated: false) == (allowed ? .allow : .cancel))
+}
+
+@MainActor
+@Test func crossmintPolicyNeverOpensANewWindowInTheBrowser() throws {
+    #expect(IDENTITY_POLICY.decision(for: try url("https://terms.example/x"), targetIsMainFrame: nil, linkActivated: true) == .cancel)
+    #expect(IDENTITY_POLICY.decision(for: try url("https://staging.crossmint.com/x"), targetIsMainFrame: nil, linkActivated: false) == .allow)
+}
+
+@MainActor
+@Test func pagePolicyTrustsMessagesOnlyFromThePage() throws {
+    #expect(PAGE_POLICY.trustsMessages(from: try url("https://staging.crossmint.com/sdk/unstable/embedded-offramp?a=1")))
+    #expect(!PAGE_POLICY.trustsMessages(from: try url("https://evil.example/sdk/unstable/embedded-offramp")))
+    #expect(!PAGE_POLICY.trustsMessages(from: try url("http://staging.crossmint.com/sdk/unstable/embedded-offramp")))
+    #expect(!PAGE_POLICY.trustsMessages(from: try url("https://staging.crossmint.com/sdk/unstable/identity-verification")))
+    #expect(!PAGE_POLICY.trustsMessages(from: nil))
+    #expect(IDENTITY_POLICY.trustsMessages(from: nil))
+}
+
+@MainActor
+@Test(arguments: [
+    (PAGE_URL.absoluteString, true, true),
+    (PAGE_URL.absoluteString, false, false),
+    ("https://evil.example/sdk/unstable/embedded-offramp", true, false)
+])
+func onlyMainFrameMessagesFromThePageReachTheView(frame: String, isMainFrame: Bool, delivered: Bool) {
+    var received: [String] = []
+    let host = HostedWebView(
+        url: PAGE_URL.absoluteString,
+        navigationPolicy: PAGE_POLICY,
+        onMessage: { body, _ in received.append(body as? String ?? "") }
+    )
+    let message = #"{"event":"offramp:ready","data":{}}"#
+
+    HostedWebView.Coordinator(host: host).receive(message, frameURL: URL(string: frame), isMainFrame: isMainFrame)
+
+    #expect(received == (delivered ? [message] : []))
+}

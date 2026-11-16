@@ -144,6 +144,108 @@ import Testing
     #expect(IdentityVerificationCredentials(inquiryId: "inq-123").id == "inq-123")
 }
 
+private func decodeCredentials(_ json: String) throws -> IdentityVerificationCredentials {
+    try JSONDecoder().decode(IdentityVerificationCredentials.self, from: Data(json.utf8))
+}
+
+@MainActor
+@Test func credentialsDecodeTheSessionShape() throws {
+    let credentials = try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":"dsk-1"}"#)
+    #expect(credentials == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1", deviceSessionKey: "dsk-1"))
+    #expect(credentials.id == "ver-1")
+    #expect(credentials.inquiryId == nil)
+    #expect(credentials.sessionToken == nil)
+    #expect(credentials.provider == nil)
+}
+
+@MainActor
+@Test func credentialsDecodeAnEmptyDeviceSessionKeyAsAbsent() throws {
+    let credentials = try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":""}"#)
+    #expect(credentials == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1"))
+    #expect(try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":5}"#)
+        == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1"))
+}
+
+@MainActor
+@Test func credentialsDecodeThePersonaShapeUnchanged() throws {
+    let credentials = try decodeCredentials(#"{"provider":"persona","inquiryId":"inq-1","sessionToken":""}"#)
+    #expect(credentials == IdentityVerificationCredentials(inquiryId: "inq-1"))
+    #expect(credentials.provider == "persona")
+}
+
+@MainActor
+@Test func credentialsDecodePrefersACompleteSession() throws {
+    #expect(try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"cs-1","provider":"persona","inquiryId":"inq-1"}"#)
+        == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1"))
+}
+
+@MainActor
+@Test func credentialsDecodeFallsBackToPersonaForAnIncompleteSession() throws {
+    #expect(try decodeCredentials(#"{"verificationId":"ver-1","clientSecret":"","provider":"persona","inquiryId":"inq-1"}"#)
+        == IdentityVerificationCredentials(inquiryId: "inq-1"))
+}
+
+@MainActor
+@Test(arguments: [
+    #"{}"#,
+    #"{"verificationId":"ver-1"}"#,
+    #"{"verificationId":"ver-1","clientSecret":""}"#,
+    #"{"verificationId":"","clientSecret":"cs-1"}"#,
+    #"{"verificationId":1,"clientSecret":"cs-1"}"#,
+    #"{"provider":"persona"}"#
+])
+func credentialsDecodeRejectsIncompleteShapes(json: String) {
+    #expect(throws: DecodingError.self) {
+        try decodeCredentials(json)
+    }
+}
+
+@MainActor
+@Test func credentialsEncodeEachShapeForTheHostedPage() throws {
+    #expect(try IdentityVerificationCredentials(inquiryId: "inq-1", sessionToken: "tok-1").toJSON()
+        == #"{"inquiryId":"inq-1","provider":"persona","sessionToken":"tok-1"}"#)
+    #expect(try IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1", deviceSessionKey: "dsk-1").toJSON()
+        == #"{"clientSecret":"cs-1","deviceSessionKey":"dsk-1","verificationId":"ver-1"}"#)
+    #expect(try IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1", deviceSessionKey: "").toJSON()
+        == #"{"clientSecret":"cs-1","verificationId":"ver-1"}"#)
+}
+
+@MainActor
+@Test func verificationUrlCarriesSessionCredentials() throws {
+    let verification = CrossmintIdentityVerification(
+        apiKey: "ck_staging_test",
+        credentials: IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1")
+    )
+
+    let components = try #require(URLComponents(string: try verification.generateVerificationUrl()))
+    let credentials = components.queryItems?.first { $0.name == "credentials" }?.value
+    #expect(credentials == #"{"clientSecret":"cs-1","verificationId":"ver-1"}"#)
+}
+
+@MainActor
+@Test func sessionCredentialsCompareEveryField() throws {
+    let credentials = IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1")
+    let rotated = IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-2")
+
+    #expect(rotated.id == credentials.id)
+    #expect(rotated != credentials)
+    #expect(IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1", deviceSessionKey: "dsk-1") != credentials)
+    #expect(IdentityVerificationCredentials(inquiryId: "ver-1") != credentials)
+}
+
+@MainActor
+@Test func credentialsDescriptionsHideTheSecrets() {
+    let session = IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-secret", deviceSessionKey: "dsk-secret")
+    let persona = IdentityVerificationCredentials(inquiryId: "inq-1", sessionToken: "tok-secret")
+
+    for text in [String(describing: session), "\(session)", String(reflecting: session)] {
+        #expect(text == "IdentityVerificationCredentials(session, id: ver-1)")
+    }
+    for text in [String(describing: persona), "\(persona)", String(reflecting: persona)] {
+        #expect(text == "IdentityVerificationCredentials(persona, id: inq-1)")
+    }
+}
+
 @MainActor
 @Test func developmentKeyCollapsesToStaging() throws {
     let verification = CrossmintIdentityVerification(

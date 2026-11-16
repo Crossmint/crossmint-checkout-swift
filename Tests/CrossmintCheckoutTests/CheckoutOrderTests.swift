@@ -64,6 +64,20 @@ private let REQUIRES_KYC_EVENT = #"""
 }
 
 @MainActor
+@Test func controllerExposesSessionCredentials() throws {
+    let raw = #"{"event":"order:updated","data":{"order":{"orderId":"o","payment":{"status":"requires-kyc","preparation":{"kyc":{"verificationId":"ver-1","clientSecret":"cs-1","deviceSessionKey":"dsk-1"}}}}}}"#
+    let controller = CrossmintCheckoutController()
+    controller.handle(try orderUpdate(raw))
+    #expect(controller.identityVerificationCredentials == IdentityVerificationCredentials(verificationId: "ver-1", clientSecret: "cs-1", deviceSessionKey: "dsk-1"))
+}
+
+@MainActor
+@Test func credentialsNilForIncompleteSession() throws {
+    let raw = #"{"event":"order:updated","data":{"order":{"payment":{"preparation":{"kyc":{"verificationId":"ver-1","clientSecret":""}}}}}}"#
+    #expect(try orderUpdate(raw).order?.identityVerificationCredentials == nil)
+}
+
+@MainActor
 @Test func emptySessionTokenBecomesNil() throws {
     let raw = #"{"event":"order:updated","data":{"order":{"payment":{"preparation":{"kyc":{"provider":"persona","inquiryId":"inq-1","sessionToken":""}}}}}}"#
     let credentials = try #require(try orderUpdate(raw).order?.identityVerificationCredentials)

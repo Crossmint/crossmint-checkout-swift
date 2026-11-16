@@ -157,12 +157,13 @@ Reusing a controller across checkout sessions requires calling `clear()` first.
 
 Some orders require identity verification before payment. By default checkout renders that step inline and you do nothing.
 
-To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: the credentials appear when the order needs verification, and they go away when the backend confirms it.
+To show the step in your own layout instead, pass `identityVerificationHandling: .external` to checkout. Then watch the controller for credentials and present `CrossmintIdentityVerification` with them. A sheet works well: present it when the order first has credentials, keep passing the latest ones while it is open, close it in `onComplete` or `onCancel`, and do not reopen it for that order, even after a swipe dismiss. Do not close it when the credentials go away: the order can leave `requires-kyc` as soon as the buyer submits, before the flow shows its result. Track the closed order by its `orderId`, not the credentials `id`, which can repeat across orders.
 
 ```swift
 struct CheckoutView: View {
     @StateObject private var controller = CrossmintCheckoutController()
     @State private var kycCredentials: IdentityVerificationCredentials?
+    @State private var kycClosedOrderId: String?
 
     var body: some View {
         CrossmintEmbeddedCheckout(
@@ -172,15 +173,21 @@ struct CheckoutView: View {
             identityVerificationHandling: .external,
             controller: controller
         )
-        .onReceive(controller.$order) { order in
-            kycCredentials = order?.identityVerificationCredentials
+        .onChange(of: controller.identityVerificationCredentials) { credentials in
+            if let credentials, controller.order?.orderId != kycClosedOrderId {
+                kycCredentials = credentials
+            }
         }
-        .sheet(item: $kycCredentials) { credentials in
+        .sheet(item: $kycCredentials, onDismiss: { kycClosedOrderId = controller.order?.orderId }) { credentials in
             CrossmintIdentityVerification(
                 apiKey: "ck_production_...",
                 credentials: credentials
             )
-            .onComplete { status in print("KYC finished: \(status)") }
+            .onComplete { status in
+                print("KYC finished: \(status)")
+                kycCredentials = nil
+            }
+            .onCancel { kycCredentials = nil }
             .onError { error in print("KYC error: \(error.message)") }
         }
     }
@@ -214,6 +221,55 @@ The view fills the space you give it, and the verification content scrolls insid
 > **Note:** Document capture needs camera access. Add `NSCameraUsageDescription` to your app's Info.plist or the capture step fails.
 
 > **Note:** `identityVerificationHandling` requires a current Crossmint deployment. Older deployments ignore the flag and render the verification step inline as well.
+
+## Embedded Offramp
+
+`CrossmintEmbeddedOfframp` runs one offramp session: the user adds a bank account, gets a quote, verifies their identity when needed, and confirms one deposit that your wallet signs and sends. The view then follows the payout.
+
+Create the session on your server with Create Offramp Session and pass its `sessionId` and `clientSecret`. The payer signs with your wallet.
+
+```swift
+struct OfframpView: View {
+    let sessionId: String
+    let clientSecret: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        CrossmintEmbeddedOfframp(
+            apiKey: "ck_production_...",
+            credentials: EmbeddedOfframpCredentials(sessionId: sessionId, clientSecret: clientSecret),
+            payer: EmbeddedOfframpPayer(
+                signAndSendTransaction: { transaction in
+                    try await wallet.signAndSend(transaction.serializedTransaction, on: transaction.chain)
+                },
+                signMessage: { request in try await wallet.sign(request.message) }
+            ),
+            locale: .esES
+        )
+        .onComplete { completion in print("Deposit sent: \(completion.txId)") }
+        .onCancel { dismiss() }
+        .onError { error in if !error.retriable { dismiss() } }
+    }
+}
+```
+
+`signAndSendTransaction` returns the transaction hash, or the signature on Solana. `signMessage` is optional: the offramp asks for it only when the user must prove that they own the wallet. Throw `OfframpSignatureRejectedError` from either one only when the user declined; the offramp treats any other error as an unknown outcome and waits for the deposit. Keep the view on screen while the payer runs, since a removed view drops the reply.
+
+### CrossmintEmbeddedOfframp Properties
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `String` | Yes | Your client-side API key (`ck_...`) |
+| `credentials` | `EmbeddedOfframpCredentials` | Yes | The `sessionId` and `clientSecret` of the offramp session |
+| `payer` | `EmbeddedOfframpPayer` | Yes | Signs and sends the deposit, and optionally signs the wallet ownership proof |
+| `appearance` | `CheckoutAppearance?` | No | UI customization, as in checkout |
+| `locale` | `CheckoutLocale?` | No | UI language of the offramp |
+| `fill` | `Bool` | No | Fills the height the layout gives the view instead of taking the height of the page. Defaults to `false` |
+| `consoleLogLevel` | `CheckoutLogLevel` | No | Minimum level of SDK messages written to the system console. Defaults to `.error` |
+
+Attach handlers with `.onReady { }`, `.onStatusChange { change in }`, `.onComplete { completion in }`, `.onCancel { }` and `.onError { error in }`. `onComplete` can run again for a reopened withdrawal, so deduplicate by `orderId`. Without `onCancel`, the Continue, Close and Cancel buttons do nothing.
+
+Links the user opens away from the offramp open in Safari. Identity verification uses the camera, so add `NSCameraUsageDescription` to your app's Info.plist.
 
 ## Example App
 

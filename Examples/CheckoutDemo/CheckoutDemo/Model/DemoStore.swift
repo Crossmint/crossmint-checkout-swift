@@ -82,8 +82,9 @@ final class DemoStore {
     }
 
     func adoptOrderIdentityCredentials() {
-        guard let credentials = identityVerificationCredentials else { return }
-        identityInquiryId = credentials.inquiryId
+        guard let credentials = identityVerificationCredentials,
+              let inquiryId = credentials.inquiryId else { return }
+        identityInquiryId = inquiryId
         identitySessionToken = credentials.sessionToken ?? ""
     }
 

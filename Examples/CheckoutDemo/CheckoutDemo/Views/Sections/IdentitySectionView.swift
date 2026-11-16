@@ -31,13 +31,15 @@ struct IdentitySectionView: View {
                 Section {
                     CopyableRow(
                         label: "Verification ID",
-                        value: credentials.inquiryId,
+                        value: credentials.id,
                         accessibilityID: "order-inquiry-id-label"
                     )
-                    Button("Use the order's credentials") {
-                        store.adoptOrderIdentityCredentials()
+                    if credentials.inquiryId != nil {
+                        Button("Use the order's credentials") {
+                            store.adoptOrderIdentityCredentials()
+                        }
+                        .accessibilityIdentifier("adopt-order-credentials-button")
                     }
-                    .accessibilityIdentifier("adopt-order-credentials-button")
                 } header: {
                     Text("From the active order")
                 }

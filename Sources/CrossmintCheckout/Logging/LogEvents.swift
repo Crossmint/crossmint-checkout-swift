@@ -22,6 +22,7 @@ enum LogEvents {
     static let webviewNavigationBlocked = "checkout.webview.navigation.blocked"
     static let webviewProcessTerminated = "checkout.webview.webProcess.terminated"
     static let webviewMediaPermission = "checkout.webview.mediaPermission"
+    static let webviewMediaPermissionUntrustedOrigin = "checkout.webview.mediaPermission.untrustedOrigin"
     static let webviewDismantled = "checkout.webview.dismantled"
 
     static let bridgeInbound = "checkout.bridge.inbound"
@@ -43,4 +44,10 @@ enum LogEvents {
     static let identityCompleted = "checkout.identity.completed"
     static let identityCancelled = "checkout.identity.cancelled"
     static let identityError = "checkout.identity.error"
+
+    static let offrampReady = "checkout.offramp.ready"
+    static let offrampStatusChanged = "checkout.offramp.status.changed"
+    static let offrampCompleted = "checkout.offramp.completed"
+    static let offrampCancelled = "checkout.offramp.cancelled"
+    static let offrampError = "checkout.offramp.error"
 }

@@ -10,4 +10,5 @@ import Foundation
 enum LogSurface: String {
     case embeddedCheckout = "embedded-checkout"
     case identityVerification = "identity-verification"
+    case embeddedOfframp = "embedded-offramp"
 }

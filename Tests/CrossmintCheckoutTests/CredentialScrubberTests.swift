@@ -13,6 +13,7 @@ private let JWT = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0LWZpeHR1cmUifQ.notARealS
 private let API_KEY = "ck_staging_notARealApiKeyJustTestData01"
 private let CLIENT_SECRET = "cs_notARealClientSecretJustTestData01"
 private let SESSION_TOKEN = "notARealSessionTokenJustTestData01"
+private let DEVICE_SESSION_KEY = "notARealDeviceSessionKeyJustTestData01"
 
 struct CredentialScrubberTests {
     @Test func redactsSecretsInsideBridgeJson() {
@@ -27,6 +28,16 @@ struct CredentialScrubberTests {
         #expect(!scrubbed.contains(SESSION_TOKEN))
         #expect(scrubbed.contains("order-1"))
         #expect(scrubbed.contains("inq-1"))
+    }
+
+    @Test func redactsSessionCredentialsInsideBridgeJson() {
+        let message = """
+        {"kyc":{"verificationId":"ver-1","clientSecret":"\(CLIENT_SECRET)","deviceSessionKey":"\(DEVICE_SESSION_KEY)"}}
+        """
+
+        let scrubbed = CredentialScrubber.scrub(message)
+
+        #expect(scrubbed == #"{"kyc":{"verificationId":"ver-1","clientSecret":"[REDACTED]","deviceSessionKey":"[REDACTED]"}}"#)
     }
 
     @Test func redactsQueryParametersFromHostedPageUrls() {
