@@ -11,7 +11,7 @@ nonisolated struct OrderDraft: Equatable {
     var tokenSymbol: String = TokenPreset.usdc.symbol
     var networkLocator: String = TokenPreset.usdc.networks[0].locator
     var customTokenLocator: String = ""
-    var amount: Decimal = 1
+    var amountText: String = "1"
     var recipientWalletAddress: String = ""
     var receiptEmail: String = ""
 
@@ -33,14 +33,23 @@ nonisolated struct OrderDraft: Equatable {
         network?.locator ?? customTokenLocator.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    var amount: Decimal? {
+        try? Decimal(amountText.trimmingCharacters(in: .whitespacesAndNewlines), format: .number)
+    }
+
     var amountString: String {
-        amount.formatted(.number.grouping(.never).precision(.fractionLength(0...6)))
+        (amount ?? 0).formatted(
+            .number
+                .grouping(.never)
+                .precision(.fractionLength(0...6))
+                .locale(Locale(identifier: "en_US_POSIX"))
+        )
     }
 
     var validationMessage: String? {
         if tokenLocator.isEmpty { return "Enter a token locator." }
         if !tokenLocator.contains(":") { return "A token locator looks like <chain>:<contractAddress>." }
-        if amount <= 0 { return "Enter an amount greater than zero." }
+        guard let amount, amount > 0 else { return "Enter an amount greater than zero." }
         if recipientWalletAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "Enter the wallet address that receives the token."
         }

@@ -76,7 +76,7 @@ struct OrderSectionView: View {
             }
 
             LabeledContent("Amount") {
-                TextField("Amount", value: $store.draft.amount, format: .number)
+                TextField("Amount", text: $store.draft.amountText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .accessibilityIdentifier("amount-input")
