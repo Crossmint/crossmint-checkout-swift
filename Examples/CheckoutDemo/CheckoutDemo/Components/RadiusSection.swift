@@ -12,7 +12,10 @@ struct RadiusSection: View {
     @Binding var radius: Double?
 
     @State private var isExpanded: Bool
+    @State private var draft: Double?
+    @State private var commitTask: Task<Void, Never>?
 
+    private static let commitDelay = Duration.milliseconds(500)
     private static let fallback: Double = 8
     private static let range: ClosedRange<Double> = 0...24
 
@@ -26,7 +29,7 @@ struct RadiusSection: View {
         Section {
             if isExpanded {
                 LabeledContent("Border radius") {
-                    Text("\(Int(radius ?? Self.fallback))px")
+                    Text("\(Int(displayedRadius))px")
                         .font(.callout.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
@@ -34,8 +37,12 @@ struct RadiusSection: View {
 
                 Slider(value: value, in: Self.range, step: 1)
                     .accessibilityLabel("\(label) border radius")
-                    .accessibilityValue("\(Int(radius ?? Self.fallback)) pixels")
+                    .accessibilityValue("\(Int(displayedRadius)) pixels")
                     .accessibilityIdentifier("\(identifier)-slider")
+                    .onChange(of: radius) { _, _ in
+                        commitTask?.cancel()
+                        draft = nil
+                    }
             }
         } header: {
             Button {
@@ -59,11 +66,28 @@ struct RadiusSection: View {
         "radius-" + label.lowercased().replacingOccurrences(of: " ", with: "-")
     }
 
+    private var displayedRadius: Double {
+        draft ?? radius ?? Self.fallback
+    }
+
     private var value: Binding<Double> {
         Binding(
-            get: { radius ?? Self.fallback },
-            set: { radius = $0 }
+            get: { displayedRadius },
+            set: { newValue in
+                draft = newValue
+                scheduleCommit(newValue)
+            }
         )
+    }
+
+    private func scheduleCommit(_ value: Double) {
+        commitTask?.cancel()
+        commitTask = Task {
+            try? await Task.sleep(for: Self.commitDelay)
+            guard !Task.isCancelled else { return }
+            radius = value
+            draft = nil
+        }
     }
 }
 

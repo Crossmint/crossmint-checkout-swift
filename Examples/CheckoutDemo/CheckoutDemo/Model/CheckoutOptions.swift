@@ -53,11 +53,11 @@ nonisolated struct CheckoutOptions: Equatable {
 
         return CheckoutAppearanceRules(
             destinationInput: showsDestinationInput
-                ? nil : CheckoutDestinationInputRule(display: "hidden"),
+                ? nil : CheckoutDestinationInputRule(isHidden: true),
             receiptEmailInput: showsReceiptEmailInput
-                ? nil : CheckoutReceiptEmailInputRule(display: "hidden"),
+                ? nil : CheckoutReceiptEmailInputRule(isHidden: true),
             globalMessage: showsStatusMessage
-                ? nil : CheckoutGlobalMessageRule(display: "hidden"),
+                ? nil : CheckoutGlobalMessageRule(isHidden: true),
             input: radii.inputValue.map { CheckoutInputRule(borderRadius: $0) },
             tab: radii.tabValue.map { CheckoutTabRule(borderRadius: $0) },
             primaryButton: radii.primaryButtonValue.map { CheckoutPrimaryButtonRule(borderRadius: $0) }
@@ -74,13 +74,9 @@ nonisolated struct AppearanceRadii: Equatable {
         input == nil && tab == nil && primaryButton == nil
     }
 
-    var inputValue: String? { Self.pixels(input) }
-    var tabValue: String? { Self.pixels(tab) }
-    var primaryButtonValue: String? { Self.pixels(primaryButton) }
-
-    private static func pixels(_ radius: Double?) -> String? {
-        radius.map { "\(Int($0))px" }
-    }
+    var inputValue: CheckoutLength? { input.map(CheckoutLength.px) }
+    var tabValue: CheckoutLength? { tab.map(CheckoutLength.px) }
+    var primaryButtonValue: CheckoutLength? { primaryButton.map(CheckoutLength.px) }
 }
 
 nonisolated struct AppearanceColors: Equatable {
@@ -112,7 +108,7 @@ nonisolated struct AppearanceColors: Equatable {
         )
     }
 
-    private func nilIfEmpty(_ value: String) -> String? {
-        value.isEmpty ? nil : value
+    private func nilIfEmpty(_ value: String) -> CheckoutColor? {
+        value.isEmpty ? nil : .hex(value)
     }
 }

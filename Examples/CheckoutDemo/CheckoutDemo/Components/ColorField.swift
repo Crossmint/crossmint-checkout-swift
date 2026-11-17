@@ -133,7 +133,7 @@ extension Color {
         default: return nil
         }
 
-        guard let number = UInt32(digits, radix: 16) else { return nil }
+        guard digits.allSatisfy(\.isHexDigit), let number = UInt32(digits, radix: 16) else { return nil }
         self.init(
             red: Double((number & 0xFF0000) >> 16) / 255,
             green: Double((number & 0x00FF00) >> 8) / 255,
@@ -148,7 +148,7 @@ extension Color {
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
         guard UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return nil }
-        let channels = [red, green, blue].map { Int(($0 * 255).rounded()) }
+        let channels = [red, green, blue].map { Int((min(max($0, 0), 1) * 255).rounded()) }
         return "#" + channels.map { String(format: "%02X", $0) }.joined()
         #else
         return nil
