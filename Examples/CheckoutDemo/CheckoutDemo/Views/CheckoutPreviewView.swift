@@ -18,6 +18,8 @@ struct CheckoutPreviewView: View {
     @State private var isShowingOrderDetails = false
 
     var body: some View {
+        @Bindable var store = store
+
         Group {
             if let session = store.session {
                 checkout(for: session)
@@ -64,6 +66,15 @@ struct CheckoutPreviewView: View {
                   !handledInquiryIDs.contains(credentials.id) else { return }
             handledInquiryIDs.insert(credentials.id)
             store.previewIdentityCredentials = credentials
+        }
+        .alert(
+            "Could not create the order",
+            isPresented: $store.isShowingCheckoutError,
+            presenting: store.checkoutErrorMessage
+        ) { _ in
+            Button("OK", role: .cancel) { store.checkoutErrorMessage = nil }
+        } message: { message in
+            Text(message)
         }
         .sheet(isPresented: $isShowingOrderDetails) {
             if let session = store.session {

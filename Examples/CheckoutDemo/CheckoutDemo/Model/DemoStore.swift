@@ -35,11 +35,18 @@ final class DemoStore {
     private(set) var events: [DemoEvent] = []
     private(set) var latestOrder: CheckoutOrder?
     private(set) var isCreatingOrder = false
+    private var pendingOrderRequest: UUID?
     var orderErrorMessage: String?
+    var checkoutErrorMessage: String?
 
     var isShowingOrderError: Bool {
         get { orderErrorMessage != nil }
         set { if !newValue { orderErrorMessage = nil } }
+    }
+
+    var isShowingCheckoutError: Bool {
+        get { checkoutErrorMessage != nil }
+        set { if !newValue { checkoutErrorMessage = nil } }
     }
 
     var existingOrderId = ""
@@ -56,8 +63,6 @@ final class DemoStore {
               let host = configuration.environment?.host else { return nil }
         return OrdersAPI(apiKey: apiKey, host: host)
     }
-
-    // MARK: - Derived
 
     var phaseDescription: String {
         latestOrder?.phase?.rawValue.capitalized ?? "—"
@@ -93,8 +98,6 @@ final class DemoStore {
             && !existingClientSecret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    // MARK: - Order lifecycle
-
     func createOrder() async {
         guard let api else {
             orderErrorMessage = "Add your client key in Settings before creating an order."
@@ -105,24 +108,29 @@ final class DemoStore {
             return
         }
 
+        let request = UUID()
+        pendingOrderRequest = request
         isCreatingOrder = true
         orderErrorMessage = nil
-        clearOrderState()
 
         do {
             let created = try await api.createOrder(from: draft)
+            guard pendingOrderRequest == request else { return }
+            clearOrderState()
             session = created
             previewToken = UUID()
             log(.order, "Order created", created.orderId)
         } catch {
+            guard pendingOrderRequest == request else { return }
             orderErrorMessage = error.localizedDescription
             log(.failure, "Order creation failed", error.localizedDescription)
         }
 
-        isCreatingOrder = false
+        cancelPendingOrder()
     }
 
     func useExistingOrder() {
+        cancelPendingOrder()
         clearOrderState()
         orderErrorMessage = nil
         session = OrderSession(
@@ -134,6 +142,7 @@ final class DemoStore {
     }
 
     func discardOrder() {
+        cancelPendingOrder()
         session = nil
         clearOrderState()
     }
@@ -141,8 +150,6 @@ final class DemoStore {
     func reloadPreview() {
         previewToken = UUID()
     }
-
-    // MARK: - SDK callbacks
 
     func handleOrderUpdate(_ update: CheckoutOrderUpdate) {
         guard let order = update.order else { return }
@@ -163,7 +170,7 @@ final class DemoStore {
     }
 
     func handleOrderCreationFailure(_ message: String) {
-        orderErrorMessage = message
+        checkoutErrorMessage = message
         log(.failure, "Checkout reported a failure", message)
     }
 
@@ -183,8 +190,6 @@ final class DemoStore {
         log(.failure, "Identity verification failed", error.message)
     }
 
-    // MARK: - Event log
-
     func clearEvents() {
         events.removeAll()
     }
@@ -194,8 +199,14 @@ final class DemoStore {
         if events.count > 100 { events.removeLast(events.count - 100) }
     }
 
+    private func cancelPendingOrder() {
+        pendingOrderRequest = nil
+        isCreatingOrder = false
+    }
+
     private func clearOrderState() {
         latestOrder = nil
         previewIdentityCredentials = nil
+        checkoutErrorMessage = nil
     }
 }
