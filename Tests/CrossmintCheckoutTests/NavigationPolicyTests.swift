@@ -78,26 +78,45 @@ private func url(_ string: String) throws -> URL {
     #expect(gate.reportOnce(forHTTPStatus: 404) == "HTTP 404")
 }
 
-private let PAGE_URL = URL(string: "https://staging.crossmint.com/sdk/unstable/embedded-offramp?apiKey=ck_staging_x")!
+private let PAGE = "https://staging.crossmint.com/sdk/unstable/embedded-offramp"
+private let PAGE_QUERY = "credentials=%7B%22sessionId%22%3A%22session-1%22%7D&apiKey=ck_staging_x"
+private let PAGE_URL = URL(string: "\(PAGE)?\(PAGE_QUERY)")!
 private let PAGE_POLICY = NavigationPolicy.page(PAGE_URL)
 
 @MainActor
 @Test(arguments: [
-    "https://staging.crossmint.com/sdk/unstable/embedded-offramp",
-    "https://staging.crossmint.com/sdk/unstable/embedded-offramp?step=bank",
-    "https://STAGING.crossmint.com/sdk/unstable/embedded-offramp"
+    "\(PAGE)?\(PAGE_QUERY)",
+    "\(PAGE)?\(PAGE_QUERY)&step=bank",
+    "\(PAGE)?apiKey=ck_staging_x&credentials=%7B%22sessionId%22:%22session-1%22%7D",
+    "https://STAGING.crossmint.com/sdk/unstable/embedded-offramp?\(PAGE_QUERY)",
+    "\(PAGE)?\(PAGE_QUERY)#top"
 ])
-func pagePolicyKeepsTheMainFrameOnThePageWhateverItsQuery(page: String) throws {
+func pagePolicyKeepsTheMainFrameOnThePageWithTheQueryItemsItLoaded(page: String) throws {
     #expect(PAGE_POLICY.decision(for: try url(page), targetIsMainFrame: true, linkActivated: false) == .allow)
 }
 
 @MainActor
 @Test(arguments: [
-    "https://evil.example/sdk/unstable/embedded-offramp",
-    "https://staging.crossmint.com/sdk/2024-03-05/embedded-checkout",
-    "http://staging.crossmint.com/sdk/unstable/embedded-offramp",
-    "https://staging.crossmint.com:8443/sdk/unstable/embedded-offramp",
-    "https://user@staging.crossmint.com/sdk/unstable/embedded-offramp"
+    PAGE,
+    "\(PAGE)?apiKey=ck_staging_x",
+    "\(PAGE)?credentials=%7B%22sessionId%22%3A%22session-2%22%7D&apiKey=ck_staging_x",
+    "\(PAGE)?credentials=%7B%22sessionId%22%3A%22session-1%22%7D&apiKey=ck_staging_y",
+    "\(PAGE)?credentials=%7B%22sessionId%22%3A%22session-2%22%7D&\(PAGE_QUERY)",
+    "\(PAGE)?\(PAGE_QUERY)&cred%65ntials=%7B%22sessionId%22%3A%22session-2%22%7D"
+])
+func pagePolicyBlocksThePageWithAnotherSession(other: String) throws {
+    let other = try url(other)
+    #expect(PAGE_POLICY.decision(for: other, targetIsMainFrame: true, linkActivated: false) == .cancel)
+    #expect(!PAGE_POLICY.trustsMessages(from: other))
+}
+
+@MainActor
+@Test(arguments: [
+    "https://evil.example/sdk/unstable/embedded-offramp?\(PAGE_QUERY)",
+    "https://staging.crossmint.com/sdk/2024-03-05/embedded-checkout?\(PAGE_QUERY)",
+    "http://staging.crossmint.com/sdk/unstable/embedded-offramp?\(PAGE_QUERY)",
+    "https://staging.crossmint.com:8443/sdk/unstable/embedded-offramp?\(PAGE_QUERY)",
+    "https://user@staging.crossmint.com/sdk/unstable/embedded-offramp?\(PAGE_QUERY)"
 ])
 func pagePolicyBlocksOtherMainFramePagesTheUserDidNotTap(other: String) throws {
     #expect(PAGE_POLICY.decision(for: try url(other), targetIsMainFrame: true, linkActivated: false) == .cancel)
@@ -137,9 +156,9 @@ func pagePolicyAllowsFramesInsideThePageExceptUnsafeSchemes(frame: String, allow
 
 @MainActor
 @Test func pagePolicyTrustsMessagesOnlyFromThePage() throws {
-    #expect(PAGE_POLICY.trustsMessages(from: try url("https://staging.crossmint.com/sdk/unstable/embedded-offramp?a=1")))
-    #expect(!PAGE_POLICY.trustsMessages(from: try url("https://evil.example/sdk/unstable/embedded-offramp")))
-    #expect(!PAGE_POLICY.trustsMessages(from: try url("http://staging.crossmint.com/sdk/unstable/embedded-offramp")))
+    #expect(PAGE_POLICY.trustsMessages(from: try url("\(PAGE)?\(PAGE_QUERY)&a=1")))
+    #expect(!PAGE_POLICY.trustsMessages(from: try url("https://evil.example/sdk/unstable/embedded-offramp?\(PAGE_QUERY)")))
+    #expect(!PAGE_POLICY.trustsMessages(from: try url("http://staging.crossmint.com/sdk/unstable/embedded-offramp?\(PAGE_QUERY)")))
     #expect(!PAGE_POLICY.trustsMessages(from: try url("https://staging.crossmint.com/sdk/unstable/identity-verification")))
     #expect(!PAGE_POLICY.trustsMessages(from: nil))
     #expect(IDENTITY_POLICY.trustsMessages(from: nil))
@@ -149,7 +168,8 @@ func pagePolicyAllowsFramesInsideThePageExceptUnsafeSchemes(frame: String, allow
 @Test(arguments: [
     (PAGE_URL.absoluteString, true, true),
     (PAGE_URL.absoluteString, false, false),
-    ("https://evil.example/sdk/unstable/embedded-offramp", true, false)
+    ("https://evil.example/sdk/unstable/embedded-offramp", true, false),
+    ("\(PAGE)?credentials=%7B%22sessionId%22%3A%22session-2%22%7D&apiKey=ck_staging_x", true, false)
 ])
 func onlyMainFrameMessagesFromThePageReachTheView(frame: String, isMainFrame: Bool, delivered: Bool) {
     var received: [String] = []

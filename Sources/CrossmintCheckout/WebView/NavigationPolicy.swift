@@ -9,7 +9,8 @@ import Foundation
 
 enum NavigationPolicy {
     case crossmintMainFrame(resolvedHost: String)
-    /// Keeps the main frame on this page and opens the links the user follows away from it in the browser.
+    /// Keeps the main frame on this page with the query items it was loaded with, and opens the links the user
+    /// follows away from it in the browser.
     case page(URL)
 
     enum Decision: Equatable {
@@ -62,6 +63,17 @@ enum NavigationPolicy {
     private static func isPage(_ url: URL, _ page: URL) -> Bool {
         url.scheme?.lowercased() == "https" && url.host?.lowercased() == page.host?.lowercased()
             && url.port == page.port && url.user == nil && url.password == nil && url.path == page.path
+            && keepsQueryItems(of: page, in: url)
+    }
+
+    private static func keepsQueryItems(of page: URL, in url: URL) -> Bool {
+        let current = queryValues(of: url)
+        return queryValues(of: page).allSatisfy { current[$0.key] == $0.value }
+    }
+
+    private static func queryValues(of url: URL) -> [String: [String?]] {
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        return Dictionary(grouping: items, by: \.name).mapValues { $0.map(\.value) }
     }
 
     func allowsCamera(originProtocol: String, originHost: String) -> Bool {
